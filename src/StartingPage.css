@@ -1,0 +1,26 @@
+.title {
+    position: absolute;
+    top:30%;
+}
+
+.StartPage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 20;
+    background-color: azure;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.StartPageForm {
+    display: flex;
+    flex-direction: column;
+}
+
+.StartPageJoinBtn {
+    top: 10px;
+}

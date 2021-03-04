@@ -1,0 +1,17 @@
+.RoomPage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 20;
+    background-color: azure;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.StartPageLeaveBtnDiv {
+    margin-top: 20px;
+}

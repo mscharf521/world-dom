@@ -1,0 +1,14 @@
+.cap_sym {
+    width: 2em;
+    height: 2em;
+    margin: 0px 0px;
+    display: flex;
+    align-content: center;
+    vertical-align: middle;
+}
+
+.cap_svg {
+    height: 80%;
+    display: block;
+    margin: auto;
+}

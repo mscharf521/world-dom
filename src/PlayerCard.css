@@ -1,0 +1,53 @@
+.player-card {
+    width: 12vw;
+    height: 100%;
+    margin-right: 20px;
+}
+
+.active {
+    box-shadow: 0px 0px 5px 5px rgb(255, 252, 81);
+    /* in order: x offset, y offset, blur size, spread size, color */
+    /* blur size and spread size are optional (they default to 0) */
+}
+
+.player-card-card{
+    width: 100%;
+    height: 100%;
+    padding: 0px 0px 0px 0px;
+}
+
+.name {
+    margin-top: 0;
+    margin-left: 5px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.cap-div {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: -20px;
+    margin-left: 0px;
+    width: 100%;
+}
+
+.bckgrnd-red {
+    background: linear-gradient(to right bottom, Crimson, Snow);
+}
+.bckgrnd-blue {
+    background: linear-gradient(to right bottom, DodgerBlue, Snow);
+}
+.bckgrnd-green {
+    background: linear-gradient(to right bottom, ForestGreen, Snow);
+}
+.bckgrnd-orange {
+    background: linear-gradient(to right bottom, Orange, Snow);
+}
+.bckgrnd-purple {
+    background: linear-gradient(to right bottom, DarkOrchid, Snow);
+}
+.bckgrnd-pink {
+    background: linear-gradient(to right bottom, HotPink, Snow);
+}

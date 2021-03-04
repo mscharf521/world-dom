@@ -1,0 +1,39 @@
+.city-info {
+    position: absolute;
+    z-index: 20;
+    width: 30vw;
+    height: auto;
+    right: 20px;
+    top: 20px;
+}
+
+.city-info-card{
+    background: linear-gradient(to right bottom, lightsteelblue, rgb(237, 240, 243));
+    width: 95%;
+    height: 95%;
+    padding: 0px 10px 10px 10px;
+}
+
+.top-div {
+    display: flex;
+    flex-direction: row;
+}
+
+.cityname {
+    margin: 10px 0 0 5px;
+}
+
+.countryname {
+    margin-top: -1em;
+    margin-left: 69px;
+}
+
+.population { 
+    margin-top: -0.5em;
+    margin-left: 69px;
+}
+
+.wiki-btn {
+    margin-top: -15%;
+    margin-left: 0px;
+}

@@ -1,0 +1,27 @@
+.Chat {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    z-index: 10;
+    background-color: azure;
+    width: 25vw;
+}
+
+.render-chat {
+    max-height: 20vh;
+    overflow-y: scroll;
+}
+
+.message-field {
+    display:flex;
+    flex-direction: row;
+}
+
+.message-text-field {
+    width: 95%;
+}
+
+.send-button {
+    width: 40px;
+    height: 40px;
+}
