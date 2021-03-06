@@ -21,8 +21,8 @@ import './font.css'
 import { cap_path } from "./CapSymbol"
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 
-const socket = io.connect('http://localhost:4000')
-//const socket = io.connect('https://world-dom-backend.herokuapp.com/')
+//const socket = io.connect('http://localhost:4000')
+const socket = io.connect('https://world-dom-backend.herokuapp.com/')
 
 const start_zoom = 2;//10;
 const mapContainerStyle = {
