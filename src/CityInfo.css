@@ -1,17 +1,15 @@
 .city-info {
+    background: linear-gradient(to right bottom, lightsteelblue, rgb(237, 240, 243));
     position: absolute;
     z-index: 20;
     width: 30vw;
-    height: auto;
     right: 20px;
     top: 20px;
-}
-
-.city-info-card{
-    background: linear-gradient(to right bottom, lightsteelblue, rgb(237, 240, 243));
-    width: 95%;
-    height: 95%;
-    padding: 0px 10px 10px 10px;
+    padding: 0px 10px 0px 10px;
+    border-radius: 10px;
+    border-color: black;
+    border-width: 2px;
+    border-style: solid;
 }
 
 .top-div {
@@ -34,6 +32,8 @@
 }
 
 .wiki-btn {
-    margin-top: -15%;
+    position: relative;
+    top: -10px;
+    margin-top: -40px;
     margin-left: 0px;
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import Button from '@material-ui/core/Button'
 import './RoomPage.css'
+import './font.css'
 
 export default function RoomPage(props) {
 
@@ -15,7 +16,8 @@ export default function RoomPage(props) {
   }
 
   return <div className="RoomPage">
-    <h1>{props.room}</h1>
+    <h1>Room: {props.room}</h1>
+    <h2>Players</h2>
 
     { renderUsers() }
 

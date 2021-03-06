@@ -1,4 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+
 .title {
+    font-family: 'Roboto', sans-serif;
     position: absolute;
     top:30%;
 }
@@ -10,7 +13,7 @@
     width: 100vw;
     height: 100vh;
     z-index: 20;
-    background-color: azure;
+    background: linear-gradient(to right bottom, lightsteelblue, rgb(237, 240, 243));
     display: flex;
     align-items: center;
     justify-content: center;

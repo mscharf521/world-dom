@@ -4,12 +4,23 @@
     left: 0px;
     z-index: 10;
     background-color: azure;
-    width: 25vw;
+    width: 30vw;
+    border-radius: 0 8px 0 0;
 }
 
 .render-chat {
     max-height: 20vh;
     overflow-y: scroll;
+}
+
+.chat-msg-name {
+    display: inline-block;
+    max-width:45%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+    top: 5px;
 }
 
 .message-field {

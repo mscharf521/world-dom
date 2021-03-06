@@ -2,6 +2,7 @@ import React from "react";
 import TextField from '@material-ui/core/TextField'
 import Button from '@material-ui/core/Button'
 import './StartingPage.css'
+import './font.css'
 
 export default function StartingPage(props) {
 
@@ -17,12 +18,14 @@ export default function StartingPage(props) {
 
     <form className="StartPageForm" onSubmit={props.OnSubmit}>
       <TextField 
-        name="name" 
+        name="name"
+        autoComplete='off' 
         onChange={e => onNameChange(e)}
         value={props.name}
         label="Name"/>
       <TextField 
-        name="room" 
+        name="room"
+        autoComplete='off'
         onChange={e => onRoomChange(e)}
         value={props.room}
         label="Room"/>

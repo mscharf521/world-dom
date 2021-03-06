@@ -16,20 +16,22 @@ import RoomPage from './RoomPage'
 import ResultPage, { WIN, TIE, LOSE } from './ResultPage'
 import PlayerCard from './PlayerCard'
 import './App.css'
+import './font.css'
 
 import { cap_path } from "./CapSymbol"
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 
 const socket = io.connect('http://localhost:4000')
+//const socket = io.connect('https://world-dom-backend.herokuapp.com/')
 
-const start_zoom = 10;
+const start_zoom = 2;//10;
 const mapContainerStyle = {
   width: "100vw",
   height: "100vh"
 }
 const center = {
-  lat: 38.6270,
-  lng: -90.1994,
+    lat: 0,//lat: 38.6270,
+    lng: 0,//lng: -90.1994,
 }
 
 const options = {
@@ -41,16 +43,16 @@ const PREGAME = 0;
 const CAPSEL = 1;
 const GAME = 2;
 
-let game_state = CAPSEL; 
+let game_state = PREGAME; 
 let cap_count = 0;
 let cap_buffer = [];
 let is_my_turn = false;
 
 const bomb_datas = [
-  {rad: 10000,  text:"1 megaton"  },
-  {rad: 50000,  text:"5 megaton"  },
-  {rad: 100000, text:"10 megaton" },
-  {rad: 500000, text:"50 megaton" }
+  {rad: 30000,   text:"1 megaton",  base_cnt: 9999, bonus_per: 0        },
+  {rad: 100000,  text:"5 megaton",  base_cnt: 15,   bonus_per: 100000   },
+  {rad: 500000,  text:"10 megaton", base_cnt: 8,    bonus_per: 1000000  },
+  {rad: 1000000, text:"50 megaton", base_cnt: 4,    bonus_per: 10000000 }
 ];
 
 let player_colors = [];
@@ -65,11 +67,14 @@ export default function App() {
   const [showStartPage, SetShowStartPage] = useState(true);
   const [showRoomPage, SetShowRoomPage] = useState(false);
   const [ResultPageData, SetResultPageData] = useState({show:false, result:null});
+  //const [ResultPageData, SetResultPageData] = useState({show:true, result:WIN});
   const [showSelCapBtn, SetShowSelCapBtn] = useState(false);
   const [showSelCityInfo, SetShowSelCityInfo] = useState(false);
   const [showSelCityMarker, SetShowSelCityMarker] = useState(false);
   const [showLaunchBtn, SetShowLaunchBtn] = useState(false);
   const [showBombBtns, SetShowBombBtns] = useState(false);
+  const [InfoText, SetInfoText] = useState({show: false, text:""})
+  //const [InfoText, SetInfoText] = useState({show: true, text:"Select 3 Capital Cities"})
 
   const [mapZoom, SetMapZoom] = useState(start_zoom);
 
@@ -89,13 +94,45 @@ export default function App() {
   const [chat, SetChat] = useState([]);
   const [message, SetMessage] = useState("");
 
+  function SetStartState()
+  {
+    game_state = PREGAME; 
+    cap_count = 0;
+    cap_buffer = [];
+    is_my_turn = false;
+    player_colors = [];
+
+    SetShowStartPage(true);
+    SetShowRoomPage(false);
+    SetResultPageData({show: false, result: null})
+    SetShowSelCapBtn(false);
+    SetShowSelCityInfo(false);
+    SetShowSelCityMarker(false);
+    SetShowLaunchBtn(false);
+    SetShowBombBtns(false);
+
+    SetMapZoom(start_zoom);
+
+    SetRoom("");
+    SetIsLeader(false);
+    SetUsers([]);
+    SetBombs([]);
+    SetCurTurnID("");
+    SetBombCount([]);
+
+    SetPreBomb(null);
+    SetSelectedCity({});
+    SetChat([]);
+    SetMessage("");
+  }
+
   useEffect(() => {
     socket.on('connect_error', function(){
       console.log('Connection Failed');
     })
 
-    socket.on('message', ({m_name, m_message}) => {
-      SetChat([...chat, { m_name, m_message }])
+    socket.on('message', ({m_name, m_message, fromID}) => {
+      SetChat((current) => ([...current, { m_name, m_message, color:GetCSSColor( GetPlayerColorIdx(fromID) ) }]))
     })
 
     socket.on('joined-room-result', ({success, leader}) => {
@@ -117,6 +154,7 @@ export default function App() {
       SetShowRoomPage(false);
       game_state = CAPSEL;
       cap_count = num_caps;
+      SetInfoText({show:true, text:"Select " + num_caps + " Capital Cit" + ( (num_caps > 1) ? "ies" : "y")})
     })
 
     socket.on('room-users', ({users}) => {
@@ -128,7 +166,11 @@ export default function App() {
     })
 
     socket.on('next-turn', ({userID}) => {
-      game_state = GAME;
+      if(game_state === CAPSEL)
+      {
+        game_state = GAME;
+        SetInfoText({show: false, text:""})
+      }
 
       SetCurTurnID(userID);
 
@@ -142,16 +184,24 @@ export default function App() {
     })
 
     socket.on('win', () => {
-      SetResultPageData({show:true, result:WIN});
-
+      if(game_state === GAME)
+      {
+        SetResultPageData({show:true, result:WIN});
+      }
     })
 
     socket.on('tie', () => {
-      SetResultPageData({show:true, result:TIE});
+      if(game_state === GAME)
+      {
+        SetResultPageData({show:true, result:TIE});
+      }
     })
 
     socket.on('lose', () => {
-      SetResultPageData({show:true, result:LOSE});
+      if(game_state === GAME)
+      {
+        SetResultPageData({show:true, result:LOSE});
+      }
     })
 
   }, [])
@@ -234,7 +284,7 @@ export default function App() {
     if(message && message !== "")
     {
       const {m_room, m_name, m_message} = {m_room: room, m_name:name, m_message:message};
-      socket.emit('message', {m_room, m_name, m_message});
+      socket.emit('client-message', {m_room, m_name, m_message});
       SetMessage("");
     }
     //console.log(selectedCity)
@@ -257,8 +307,12 @@ export default function App() {
   const onLeaveRoom = e => {
     e.preventDefault();
     socket.emit('leave-room', {room});
-    SetShowStartPage(true);
-    SetShowRoomPage(false);
+    SetStartState();
+  };
+
+  const onHideResult = e => {
+    e.preventDefault();
+    SetResultPageData({show: false, result: null})
   };
 
   const onSelCap = e => {
@@ -267,6 +321,8 @@ export default function App() {
     // If we have selected enough caps then send them and switch to waiting
     if(cap_buffer.length === cap_count)
     {
+      SetInfoText({show: true, text:"Waiting for other players"})
+
       socket.emit("cap-sel", {room, caps:cap_buffer});
 
       let total_pop = 0;
@@ -275,10 +331,16 @@ export default function App() {
         total_pop += cap.capinfo.pop;
       }
 
-      let new_bombCount = [999999999]
+      console.log("total pop: " + total_pop);
+
+      let new_bombCount = [999999999] // set first type to be very high number
       for(var i = 1; i < bomb_datas.length; i+=1)
       {
-        new_bombCount.push(10);
+        let this_bomb_cnt = bomb_datas[i].base_cnt;
+
+        this_bomb_cnt += Math.round( total_pop / bomb_datas[i].bonus_per );
+        console.log("i: " + i + " bmb: " + this_bomb_cnt)
+        new_bombCount.push(this_bomb_cnt)
       }
       SetBombCount(new_bombCount);
     }
@@ -321,8 +383,11 @@ export default function App() {
 
     <Chat chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg}/>
 
+    {InfoText.show &&
+    <div className="info-text-div"><h1 className="info-text">{InfoText.text}</h1></div>}
+
     {ResultPageData.show && 
-    <ResultPage /> }
+    <ResultPage result={ResultPageData.result} OnHide={onHideResult} OnLeave={onLeaveRoom} /> }
 
     {isLoaded &&
     <GoogleMap 
@@ -362,7 +427,7 @@ export default function App() {
               fillColor: GetCSSColor(GetPlayerColorIdx(user.id)),
               fillOpacity: 0.8,
               strokeWeight: 0,
-              scale: ((mapZoom ** 1.5) / 30),
+              scale: ((mapZoom ** 1.3) / 20),
               anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
               }}
             options={{clickable:false}}
@@ -400,13 +465,13 @@ export default function App() {
     {showBombBtns &&
     <div className="bomb-btn-container">
     {bomb_datas.map((bomb_data, index) => (
-      <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) == index) ? " active-bomb-btn" : "")}>
+      <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) === index) ? " active-bomb-btn" : "")}>
       <Button
         className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bomb")}
         variant="contained"
         onClick={() => onBombBtnPress(index)}
       >
-          <p className="bomb-btn-count">{(index != 0 ? bombCount[index] : "∞")}</p> {" " + bomb_data.text}
+          <p className="bomb-btn-count">{(index !== 0 ? bombCount[index] : "∞")}</p> {" " + bomb_data.text}
       </Button></div>
     ))}
     </div>}
@@ -470,7 +535,7 @@ function GetIndexFromRadius(radius)
 {
   for(var i = 0; i < bomb_datas.length; i += 1)
   {
-    if(bomb_datas[i].rad == radius)
+    if(bomb_datas[i].rad === radius)
     {
       return i;
     }
@@ -481,7 +546,7 @@ function GetIndexFromRadius(radius)
 function GetPlayerColorIdx(userID)
 {
   let index = player_colors.findIndex(pc => pc.id === userID);
-  if(index == -1) // Player has not been assigned color
+  if(index === -1) // Player has not been assigned color
   {
     for(let i = 0; i < COLOR_CNT; i++)
     {
