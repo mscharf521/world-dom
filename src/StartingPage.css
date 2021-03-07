@@ -27,3 +27,14 @@
 .StartPageJoinBtn {
     top: 10px;
 }
+
+.kofi-btn {
+    position: absolute;
+    bottom: 50px;
+    left: 50px;
+    transition: all .1s ease-in-out;
+}
+
+.kofi-btn:hover {
+    transform: scale(1.2);
+}
