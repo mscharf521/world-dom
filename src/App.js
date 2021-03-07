@@ -49,10 +49,10 @@ let cap_buffer = [];
 let is_my_turn = false;
 
 const bomb_datas = [
-  {rad: 30000,   text:"1 megaton",  base_cnt: 9999, bonus_per: 0        },
-  {rad: 100000,  text:"5 megaton",  base_cnt: 15,   bonus_per: 100000   },
-  {rad: 500000,  text:"10 megaton", base_cnt: 8,    bonus_per: 1000000  },
-  {rad: 1000000, text:"50 megaton", base_cnt: 4,    bonus_per: 10000000 }
+  {rad: 30000,   text:"1 megaton",  base_cnt: 999, bonus_per: 1        }, //base count and bonus are not used for first bomb type
+  {rad: 100000,  text:"5 megaton",  base_cnt: 15,  bonus_per: 500000   },
+  {rad: 500000,  text:"10 megaton", base_cnt: 6,   bonus_per: 1000000  },
+  {rad: 1000000, text:"50 megaton", base_cnt: 3,   bonus_per: 10000000 }
 ];
 
 let player_colors = [];
