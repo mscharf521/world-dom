@@ -37,6 +37,16 @@ const center = {
 const options = {
   disableDefaultUI: true,
   zoomControl: true,
+  minZoom: 2,
+  restriction: {
+    latLngBounds: {
+      north: 85,
+      south: -85,
+      east: 180,
+      west: -180,
+    },
+  },
+  gestureHandling: 'greedy',
 }
 
 const PREGAME = 0;
@@ -49,10 +59,10 @@ let cap_buffer = [];
 let is_my_turn = false;
 
 const bomb_datas = [
-  {rad: 30000,   text:"1 megaton",  base_cnt: 999, bonus_per: 1        }, //base count and bonus are not used for first bomb type
-  {rad: 100000,  text:"5 megaton",  base_cnt: 15,  bonus_per: 500000   },
-  {rad: 500000,  text:"10 megaton", base_cnt: 6,   bonus_per: 1000000  },
-  {rad: 1000000, text:"50 megaton", base_cnt: 3,   bonus_per: 10000000 }
+  {rad: 30000,   text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
+  {rad: 100000,  text:"5 megaton",  base_cnt: 15,  bonus_per: 500000,   zoom: 6 },
+  {rad: 500000,  text:"10 megaton", base_cnt: 6,   bonus_per: 1000000,  zoom: 5 },
+  {rad: 1000000, text:"50 megaton", base_cnt: 3,   bonus_per: 10000000, zoom: 5 }
 ];
 
 let player_colors = [];
@@ -163,6 +173,8 @@ export default function App() {
 
     socket.on('bomb-update', ({bombs}) => {
       SetBombs(bombs);
+      mapRef.current.panTo(bombs[bombs.length - 1].center)
+      mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bombs[bombs.length - 1].radius)].zoom)
     })
 
     socket.on('next-turn', ({userID}) => {
@@ -343,11 +355,12 @@ export default function App() {
         new_bombCount.push(this_bomb_cnt)
       }
       SetBombCount(new_bombCount);
+      cap_buffer = [];
     }
     SetShowSelCapBtn(false);
     SetShowSelCityMarker(false);
     SetShowSelCityInfo(false);
-    console.log(cap_buffer)
+    //console.log(cap_buffer)
   };
 
   const onLaunch = e => {
@@ -436,6 +449,25 @@ export default function App() {
           )
         )
       ))}
+
+      {cap_buffer && 
+      cap_buffer.map((cap, index) => (
+        cap.capinfo &&
+        <Marker
+          position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
+          icon={{
+            path: cap_path,
+            fillColor: GetCSSColor(GetPlayerColorIdx(socket.id)),
+            fillOpacity: 0.8,
+            strokeWeight: 0,
+            scale: ((mapZoom ** 1.3) / 20),
+            anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
+            }}
+          options={{clickable:false}}
+          key={index}
+        />
+        ))
+      }
 
       {is_my_turn && preBomb && preBomb.center && preBomb.center.lat && preBomb.center.lng &&
       <Circle
@@ -566,4 +598,18 @@ function GetPlayerColorIdx(userID)
     //console.log(index)
     return player_colors[index].color_idx;
   }
+}
+
+function GetBombIdxfromRadius(radius)
+{
+  let idx = -1;
+  for(const bomb_data of bomb_datas)
+  {
+    idx += 1;
+    if(bomb_data.rad === radius)
+    {
+      return idx;
+    }
+  }
+  return 0;
 }
