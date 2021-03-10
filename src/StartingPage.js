@@ -64,7 +64,7 @@ export default function StartingPage(props) {
           of the game. During your turn, you will select a position on the map to drop a buclear bomb in an attempt to discover and destroy enemy capitals. 
           The last one standing wins.
           <br/><br/>
-          BEWARE: <br/>You can bomb your own capital and multiple players may be held up in the same capital.
+          BEWARE: <br/>You can bomb your own capital and multiple players may have the same capital city.
           <br/><br/>
           NOTE: <br/>The bigger you capitals are in population, the more bombs you start the game with.
         </p>
