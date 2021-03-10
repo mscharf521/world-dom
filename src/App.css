@@ -4,6 +4,20 @@
   text-align: center;
 }
 
+.Map {
+  position: absolute;
+  top: 0;
+
+}
+
+.MapCover {
+  position:absolute;
+  width: 100vw;
+  height: 100vh;
+  z-index: 15;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0));
+}
+
 .sel-cap-btn-div {
   position: absolute;
   z-index: 10;

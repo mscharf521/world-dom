@@ -5,7 +5,7 @@
     width: 100vw;
     height: 100vh;
     z-index: 20;
-    background: linear-gradient(to right bottom, lightsteelblue, rgb(237, 240, 243));
+    background: linear-gradient(to top, lightsteelblue, rgba(224, 229, 233, 0.753));
     display: flex;
     align-items: center;
     justify-content: center;

@@ -27,6 +27,25 @@
     width: 25%;
 }
 
+.ResultPageHideBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width:  40px;
+    height: 40px;
+    transition: all .1s ease-in-out;
+}
+
+.ResultPageHideBtn:hover {
+    cursor: pointer;
+    transform: scale(1.1);
+}
+
+.ResultPageHideBtn img {
+    width: 100%;
+    height: auto;
+}
+
 .ResultPageLeaveBtn {
     top: 20px;
 }

@@ -11,11 +11,12 @@ export default function ResultPage(props) {
 
   return <div className="ResultPage">
     <h1 className="result">{GetResultText(props.result)}</h1>
-    <Button
-        className="ResultPageHideBtn result-btn"
-        variant="contained"
-        color="primary"
-        onClick={props.OnHide}>Hide</Button>
+    
+    <div className="ResultPageHideBtn" 
+        onClick={props.OnHide}>
+      <img src={process.env.PUBLIC_URL + '/x-mark.png'} alt={"Close"}/>
+    </div>
+    
     <Button
         className="ResultPageLeaveBtn result-btn"
         variant="contained"

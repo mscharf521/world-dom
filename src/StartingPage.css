@@ -3,7 +3,7 @@
 .title {
     font-family: 'Roboto', sans-serif;
     position: absolute;
-    top:30%;
+    top:25vh;
 }
 
 .StartPage {
@@ -13,28 +13,66 @@
     width: 100vw;
     height: 100vh;
     z-index: 20;
-    background: linear-gradient(to right bottom, lightsteelblue, rgb(237, 240, 243));
+}
+
+.StartPage-background {
+    width: 100%;
+    background: linear-gradient(to top, lightsteelblue, rgba(224, 229, 233, 0.753));
+}
+
+.HomePage {
+    width: 100vw;
+    height: 90vh;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.StartPageForm {
+.HomePageForm {
     display: flex;
     flex-direction: column;
 }
 
-.StartPageJoinBtn {
+.HomePageJoinBtn {
     top: 10px;
 }
 
 .kofi-btn {
-    position: absolute;
-    bottom: 50px;
+    position: fixed;
+    top: 50px;
     left: 50px;
     transition: all .1s ease-in-out;
 }
 
 .kofi-btn:hover {
     transform: scale(1.2);
+}
+
+.HomeInfoPage {
+    width: 100%;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.HowToPlayTitle:hover {
+    cursor: pointer;
+}
+
+.HowToPlayText {
+    font-size: 140%;
+    text-align: center;
+    padding: 0 100px;
+}
+
+.WaysToPlayText {
+    font-size: 140%;
+    text-align: center;
+    padding: 0 100px;
+}
+
+.WaysToPlayList {
+    font-size: 130%;
+    padding: 0 100px;
 }

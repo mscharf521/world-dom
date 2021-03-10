@@ -15,6 +15,7 @@ import StartingPage from './StartingPage'
 import RoomPage from './RoomPage'
 import ResultPage, { WIN, TIE, LOSE } from './ResultPage'
 import PlayerCard from './PlayerCard'
+import AlertSystem from './AlertSystem'
 import './App.css'
 import './font.css'
 
@@ -29,7 +30,7 @@ const mapContainerStyle = {
   width: "100vw",
   height: "100vh"
 }
-const center = {
+const start_center = {
     lat: 0,//lat: 38.6270,
     lng: 0,//lng: -90.1994,
 }
@@ -60,9 +61,9 @@ let is_my_turn = false;
 
 const bomb_datas = [
   {rad: 30000,   text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
-  {rad: 100000,  text:"5 megaton",  base_cnt: 15,  bonus_per: 500000,   zoom: 6 },
-  {rad: 500000,  text:"10 megaton", base_cnt: 6,   bonus_per: 1000000,  zoom: 5 },
-  {rad: 1000000, text:"50 megaton", base_cnt: 3,   bonus_per: 10000000, zoom: 5 }
+  {rad: 100000,  text:"5 megaton",  base_cnt: 10,  bonus_per: 500000,   zoom: 6 },
+  {rad: 500000,  text:"10 megaton", base_cnt: 5,   bonus_per: 1000000,  zoom: 5 },
+  {rad: 1000000, text:"50 megaton", base_cnt: 1,   bonus_per: 5000000,  zoom: 5 }
 ];
 
 let player_colors = [];
@@ -88,6 +89,8 @@ export default function App() {
 
   const [mapZoom, SetMapZoom] = useState(start_zoom);
 
+  //const [alerts, SetAlerts] = useState([])
+  const [alerts, SetAlerts] = useState([{text:"This is an alert!"}])
   const [name, SetName] = useState("");
   const [room, SetRoom] = useState("");
   const [isLeader, SetIsLeader] = useState(false);
@@ -134,6 +137,9 @@ export default function App() {
     SetSelectedCity({});
     SetChat([]);
     SetMessage("");
+
+    mapRef.current.panTo(start_center)
+    mapRef.current.setZoom(start_zoom)
   }
 
   useEffect(() => {
@@ -309,6 +315,14 @@ export default function App() {
       const {m_name, m_room} = {m_name:name, m_room:room};
       socket.emit('join-room', {m_name, m_room});
     }
+    else if( room === "" )
+    {
+      SetAlerts(current => ([...current, {text: "Invalid room name"}]))
+    }
+    else if( name === "" )
+    {
+      SetAlerts(current => ([...current, {text: "Invalid user name"}]))
+    }
   };
 
   const onStartGame = e => {
@@ -394,7 +408,13 @@ export default function App() {
     {showRoomPage && 
     <RoomPage room={room} users={users} isLeader={isLeader} OnStartGame={onStartGame} OnLeaveRoom={onLeaveRoom}/>}
 
-    <Chat chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg}/>
+    {game_state === PREGAME &&
+    <div className="MapCover"></div>}
+
+    {false && <AlertSystem alerts={alerts}/>}
+
+    {game_state !== PREGAME && 
+    <Chat chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg}/>}
 
     {InfoText.show &&
     <div className="info-text-div"><h1 className="info-text">{InfoText.text}</h1></div>}
@@ -404,9 +424,10 @@ export default function App() {
 
     {isLoaded &&
     <GoogleMap 
+      className="Map"
       mapContainerStyle={mapContainerStyle}
       zoom={start_zoom}
-      center={center}
+      center={start_center}
       options={options}
       onClick={onMapClick}
       onRightClick={onMapRightClick}

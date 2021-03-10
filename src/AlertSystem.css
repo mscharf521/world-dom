@@ -1,0 +1,42 @@
+.AlertSystem-container {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 30;
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+    pointer-events: none;
+}
+
+.AlertSystem {
+    width: 50vw;
+    height: auto;
+    max-height: 25vh;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    overflow-y: hidden;
+    overflow-x: visible;
+    pointer-events: all;
+    align-content: center;
+}
+
+.Alert {
+    width: 80%;
+    height: auto;
+    border-radius: 20px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    font-size: 1.5rem;
+    color: white;
+    text-shadow: 2px 2px black;
+    margin-bottom: 10px;
+    transition: all 0.2s ease-in-out;
+}
+
+.Alert:hover {
+    transform: scale(1.1);
+}
