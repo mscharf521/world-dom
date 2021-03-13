@@ -33,7 +33,8 @@ export default function StartingPage(props) {
   return <div className="StartPage">
     <div className="StartPage-background">
       <div className="HomePage">
-        <h1 className="title">WORLD DOMINATION</h1>
+        <img src={process.env.PUBLIC_URL + '/logo.png'}/>
+        {false && <h1 className="title">WORLD DOMINATION</h1>}
 
         <form className="HomePageForm" onSubmit={props.OnSubmit}>
           <TextField 
@@ -58,7 +59,7 @@ export default function StartingPage(props) {
         <a className='kofi-btn' href='https://ko-fi.com/Z8Z73V4Y6' target='_blank' rel="noopener noreferrer"><img height='36' style={{border:'0px', height:'36px'}} src='https://cdn.ko-fi.com/cdn/kofi1.png?v=2' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
       </div>
       <div className="HomeInfoPage">
-        <div className="HowToPlayDiv" ref={infoRef}>
+        <div className="HowToPlayDiv InfoDiv" ref={infoRef}>
           <h1 className="HowToPlayTitle" onClick={HowToPlayOnClick}>How to Play</h1>
           <p className="HowToPlayText">The world is in the midst of a nuclear apocalypse. You lead one of the surviving nations which have been forced into 
             hiding by the nuclear threats of rivaling nations. Each nation is confined to their secret capital cities which are selected at the beginning 
@@ -70,7 +71,7 @@ export default function StartingPage(props) {
             NOTE: <br/>The bigger you capitals are in population, the more bombs you start the game with.
           </p>
         </div>
-        <div className="WaysToPlayDiv">
+        <div className="WaysToPlayDiv InfoDiv">
           <h1 className="HowToPlayTitle">Variations</h1>
           <p className="WaysToPlayText">
             There are many ways to play, but here are some ideas for making the game more interesting:
