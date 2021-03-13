@@ -34,9 +34,10 @@
     color: white;
     text-shadow: 2px 2px black;
     margin-bottom: 10px;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.1s ease-in-out;
 }
 
 .Alert:hover {
     transform: scale(1.1);
+    cursor: pointer;
 }

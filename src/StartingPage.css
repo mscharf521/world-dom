@@ -3,7 +3,12 @@
 .title {
     font-family: 'Roboto', sans-serif;
     position: absolute;
-    top:25vh;
+    top:23vh;
+    text-shadow: 2px  2px white,
+                -2px  2px white,
+                -2px -2px white,
+                 2px -2px white;
+    font-size: 290%;
 }
 
 .StartPage {
@@ -56,6 +61,19 @@
     align-items: center;
 }
 
+.HowToPlayDiv {
+    background-color: rgba(136, 136, 136, 0.3);
+    border-radius: 20px;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 40px;
+    border-color: black;
+    border-width: 2px;
+    border-style: solid;
+}
+
 .HowToPlayTitle:hover {
     cursor: pointer;
 }
@@ -63,13 +81,26 @@
 .HowToPlayText {
     font-size: 140%;
     text-align: center;
-    padding: 0 100px;
+    padding: 0 40px;
+}
+
+.WaysToPlayDiv {
+    background-color: rgba(136, 136, 136, 0.3);
+    border-radius: 20px;
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 80px;
+    border-color: black;
+    border-width: 2px;
+    border-style: solid;
 }
 
 .WaysToPlayText {
     font-size: 140%;
     text-align: center;
-    padding: 0 100px;
+    padding: 0 40px;
 }
 
 .WaysToPlayList {

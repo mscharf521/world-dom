@@ -68,6 +68,8 @@ const bomb_datas = [
 
 let player_colors = [];
 
+let next_alert_id = 0;
+
 export default function App() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
@@ -89,8 +91,8 @@ export default function App() {
 
   const [mapZoom, SetMapZoom] = useState(start_zoom);
 
-  //const [alerts, SetAlerts] = useState([])
-  const [alerts, SetAlerts] = useState([{text:"This is an alert!"}])
+  const [alerts, SetAlerts] = useState([])
+  //const [alerts, SetAlerts] = useState([{text:"This is an alert!", id:99999}])
   const [name, SetName] = useState("");
   const [room, SetRoom] = useState("");
   const [isLeader, SetIsLeader] = useState(false);
@@ -317,11 +319,11 @@ export default function App() {
     }
     else if( room === "" )
     {
-      SetAlerts(current => ([...current, {text: "Invalid room name"}]))
+      addAlert("Invalid room name")
     }
     else if( name === "" )
     {
-      SetAlerts(current => ([...current, {text: "Invalid user name"}]))
+      addAlert("Invalid user name")
     }
   };
 
@@ -402,6 +404,28 @@ export default function App() {
     }
   };
 
+  const addAlert = (text) => {
+    SetAlerts(current => ([...current, {text, id:next_alert_id}]))
+    let tmp_id = next_alert_id;
+    setTimeout(function() {
+      console.log("remove id: " + tmp_id)
+      removeAlert(tmp_id)
+    }, 2000)
+    next_alert_id += 1;
+  }
+
+  const removeAlert = (rm_id) => {
+    SetAlerts(current => {
+      let idx = current.findIndex(alert => alert.id === rm_id);
+      if(idx !== -1)
+      {
+        current.splice(idx, 1);
+        console.log(current);
+      }
+      return [...current];
+    })
+  }
+
   return <div>
     {showStartPage && 
     <StartingPage name={name} SetName={SetName} room={room} SetRoom={SetRoom} OnSubmit={onJoinRoom}/>}
@@ -411,7 +435,7 @@ export default function App() {
     {game_state === PREGAME &&
     <div className="MapCover"></div>}
 
-    {false && <AlertSystem alerts={alerts}/>}
+    <AlertSystem alerts={alerts} removeAlert={removeAlert}/>
 
     {game_state !== PREGAME && 
     <Chat chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg}/>}
