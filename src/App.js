@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import io from "socket.io-client"
 import Button from '@material-ui/core/Button'
 import LocationSearchingIcon from '@material-ui/icons/LocationSearching';
@@ -144,6 +144,11 @@ export default function App() {
     mapRef.current.setZoom(start_zoom)
   }
 
+  // This reference to users is necessary so that the current list of users can be used in the second use effect which sets up 
+  // the socket listeners. Since only on set of socket listeners at the start, they do not have an up to date version of the users
+  const usersRef = useRef(users);
+  useEffect(() => {usersRef.current = users})
+
   useEffect(() => {
     socket.on('connect_error', function(){
       console.log('Connection Failed');
@@ -181,8 +186,18 @@ export default function App() {
 
     socket.on('bomb-update', ({bombs}) => {
       SetBombs(bombs);
-      mapRef.current.panTo(bombs[bombs.length - 1].center)
-      mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bombs[bombs.length - 1].radius)].zoom)
+      //mapRef.current.panTo(bombs[bombs.length - 1].center)
+      //mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bombs[bombs.length - 1].radius)].zoom)
+
+      let idx = usersRef.current.findIndex(user => user.id === bombs[bombs.length - 1].ownerID)
+      if(idx !== -1)
+      {
+        let user = usersRef.current[idx];
+        //let color = GetCSSColor(GetPlayerColorIdx(user.id)) || "black";
+        //addAlert("<span style=" + color + ">" + user.username + "</span>" + "dropped a bomb!", function() {bombPanToLoc(bombs[bombs.length - 1])}, 10000)
+        addAlert(user.username + " dropped a bomb!", function() {bombPanToLoc(bombs[bombs.length - 1])}, 10000)
+        console.log(user.username + " dropped a bomb! Click to show")
+      }
     })
 
     socket.on('next-turn', ({userID}) => {
@@ -196,6 +211,7 @@ export default function App() {
 
       if(userID === socket.id) // my turn
       {
+        addAlert("It's your turn", null)
         is_my_turn = true;
         SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
         SetShowBombBtns(true);
@@ -234,9 +250,6 @@ export default function App() {
   const onMapClick = useCallback((e) => {
 
     let search_radius = GetSearchRadiusFromZoom(mapRef.current.zoom)
-    //console.log(search_radius)
-    //SetBombs((current) => [...current, {center:{lat:e.latLng.lat(), lng:e.latLng.lng()}, radius:search_radius}])
-
     GetCityInfoFromLatLng(e.latLng.lat(), e.latLng.lng(), search_radius).then(city_info => {
 
       // Found city
@@ -299,6 +312,11 @@ export default function App() {
     }
   }, []);
 
+  const bombPanToLoc = (bomb) => {
+    mapRef.current.panTo(bomb.center)
+    mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bomb.radius)].zoom)
+  };
+
   const onSendMsg = e => {
     e.preventDefault();
     if(message && message !== "")
@@ -319,11 +337,11 @@ export default function App() {
     }
     else if( room === "" )
     {
-      addAlert("Invalid room name")
+      addAlert("Invalid room name", 2000)
     }
     else if( name === "" )
     {
-      addAlert("Invalid user name")
+      addAlert("Invalid user name", 2000)
     }
   };
 
@@ -367,7 +385,7 @@ export default function App() {
         let this_bomb_cnt = bomb_datas[i].base_cnt;
 
         this_bomb_cnt += Math.round( total_pop / bomb_datas[i].bonus_per );
-        console.log("i: " + i + " bmb: " + this_bomb_cnt)
+        //console.log("i: " + i + " bmb: " + this_bomb_cnt)
         new_bombCount.push(this_bomb_cnt)
       }
       SetBombCount(new_bombCount);
@@ -404,13 +422,13 @@ export default function App() {
     }
   };
 
-  const addAlert = (text) => {
-    SetAlerts(current => ([...current, {text, id:next_alert_id}]))
+  const addAlert = (text, OnClickFunc, duration) => {
+    SetAlerts(current => ([...current, {text, id:next_alert_id, OnClickFunc}]))
     let tmp_id = next_alert_id;
     setTimeout(function() {
       console.log("remove id: " + tmp_id)
       removeAlert(tmp_id)
-    }, 2000)
+    }, duration || 2000)
     next_alert_id += 1;
   }
 

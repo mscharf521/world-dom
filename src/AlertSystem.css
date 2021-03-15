@@ -7,7 +7,6 @@
     z-index: 30;
     display: flex;
     justify-content: center;
-    padding-top: 10px;
     pointer-events: none;
 }
 
@@ -20,8 +19,9 @@
     flex-wrap: wrap;
     overflow-y: hidden;
     overflow-x: visible;
-    pointer-events: all;
     align-content: center;
+    pointer-events: none;
+    padding-top: 10px;
 }
 
 .Alert {
@@ -29,12 +29,15 @@
     height: auto;
     border-radius: 20px;
     text-align: center;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
     font-size: 1.5rem;
     color: white;
     text-shadow: 2px 2px black;
     margin-bottom: 10px;
     transition: all 0.1s ease-in-out;
+    pointer-events: all;
+    overflow: hidden;
+    white-space: pre-line;
 }
 
 .Alert:hover {

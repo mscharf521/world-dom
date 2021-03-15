@@ -33,7 +33,7 @@ export default function StartingPage(props) {
   return <div className="StartPage">
     <div className="StartPage-background">
       <div className="HomePage">
-        <img src={process.env.PUBLIC_URL + '/logo.png'}/>
+        <img src={process.env.PUBLIC_URL + '/logo.png'} alt="World Domination"/>
         {false && <h1 className="title">WORLD DOMINATION</h1>}
 
         <form className="HomePageForm" onSubmit={props.OnSubmit}>
