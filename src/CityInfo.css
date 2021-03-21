@@ -10,6 +10,7 @@
     border-color: black;
     border-width: 2px;
     border-style: solid;
+    overflow: hidden;
 }
 
 .top-div {
@@ -19,6 +20,10 @@
 
 .cityname {
     margin: 10px 0 0 5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    margin-right: 0px;
 }
 
 .countryname {
@@ -31,9 +36,54 @@
     margin-left: 69px;
 }
 
-.wiki-btn {
+.wiki-btn-div {
+    width: 64px;
     position: relative;
     top: -10px;
     margin-top: -40px;
     margin-left: 0px;
+}
+
+.wiki-btn {
+    width: 100%;
+}
+
+@media only screen and (max-width: 812px) {
+    
+.city-info {
+    width: 55vw;
+    right: 5px;
+    top: 10px;
+    padding: 0px 5px;
+}
+
+.cityname {
+    font-size: 130%;
+    margin-top: 10px;
+    margin-left: 2px;
+}
+.countryname {
+    margin-top: -1.4em;
+    font-size: 110%;
+    margin-left: 67px;
+}
+
+.population {
+    font-size: 100%;
+    margin-left: 67px;
+    margin-top: -0.8em;
+}
+
+.wiki-btn-div {
+    position: relative;
+    top: -8px;
+    margin-top: -40px;
+}
+
+.wiki-btn {
+    font-size: 1em;
+    padding: 0;
+    margin: 0;
+}
+
 }

@@ -1,23 +1,18 @@
-.cap_sym {
-    width: 2em;
-    height: 2em;
+.mouse {
+    width: 2.5em;
+    height: 2.5em;
     margin: 0px 0px;
     display: flex;
     align-content: center;
     vertical-align: middle;
 }
 
-.cap_svg {
+.mouse_svg {
     height: 80%;
     display: block;
     margin: auto;
 }
 
 @media only screen and (max-width: 812px) {
-    
-.cap_sym {
-    width: 1.6em;
-    height: 1.6em;
-}
 
 }

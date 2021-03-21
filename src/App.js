@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import io from "socket.io-client"
 import Button from '@material-ui/core/Button'
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
 import LocationSearchingIcon from '@material-ui/icons/LocationSearching';
 import {
   GoogleMap,
@@ -16,6 +18,8 @@ import RoomPage from './RoomPage'
 import ResultPage, { WIN, TIE, LOSE } from './ResultPage'
 import PlayerCard from './PlayerCard'
 import AlertSystem from './AlertSystem'
+import LeftMouse from "./LeftMouse"
+import RightMouse from "./RightMouse"
 import './App.css'
 import './font.css'
 
@@ -101,10 +105,13 @@ export default function App() {
   const [bombs, SetBombs] = useState([]);
   const [curTurnID, SetCurTurnID] = useState("");
   //const [curTurnID, SetCurTurnID] = useState("1234-56789");
-  const [bombCount, SetBombCount] = useState([]);
+  //const [bombCount, SetBombCount] = useState([]);
+  const [bombCount, SetBombCount] = useState([999999,40,15,3]);
 
   const [preBomb, SetPreBomb] = useState(null);
   const [selectedCity, SetSelectedCity] = useState({});
+
+  const [CityInfoControl, SetCityInfoControl] = useState(true);
 
   const [chat, SetChat] = useState([]);
   const [message, SetMessage] = useState("");
@@ -149,9 +156,13 @@ export default function App() {
   const usersRef = useRef(users);
   useEffect(() => {usersRef.current = users})
 
+  const ctrlRef = useRef(CityInfoControl);
+  useEffect(() => {ctrlRef.current = CityInfoControl})
+
+
   useEffect(() => {
-    socket.on('connect_error', function(){
-      console.log('Connection Failed');
+    socket.on('connect_error', function(err){
+      console.log(`connect_error due to ${err.message}`);
     })
 
     socket.on('message', ({m_name, m_message, fromID}) => {
@@ -248,7 +259,11 @@ export default function App() {
   }, []);
 
   const onMapClick = useCallback((e) => {
-
+    if(!ctrlRef.current)
+    {
+      onBombPosSelect(e);
+      return;
+    }
     let search_radius = GetSearchRadiusFromZoom(mapRef.current.zoom)
     GetCityInfoFromLatLng(e.latLng.lat(), e.latLng.lng(), search_radius).then(city_info => {
 
@@ -296,6 +311,11 @@ export default function App() {
 
   const onMapRightClick = useCallback((e) => {
     console.log("Right click")
+    onBombPosSelect(e);
+  }, []);
+
+  const onBombPosSelect = (e) => {
+    console.log("BombSelect")
     if(game_state === GAME && is_my_turn)
     {
       SetPreBomb((current) => {
@@ -303,7 +323,7 @@ export default function App() {
         return {center:{lat:e.latLng.lat(), lng:e.latLng.lng()}, radius:current.radius}})
       SetShowLaunchBtn(true);
     }
-  }, []);
+  }
 
   const onMapZoomChange = useCallback((e) => {
     if(mapRef && mapRef.current)
@@ -408,6 +428,7 @@ export default function App() {
       SetPreBomb(null);
       SetShowLaunchBtn(false);
       SetShowBombBtns(false);
+      SetCityInfoControl(true);
       socket.emit("client-turn", {room, bomb:{center:preBomb.center, radius: preBomb.radius, ownerID: socket.id}});
     }
   };
@@ -419,6 +440,13 @@ export default function App() {
     if(is_my_turn && (bombCount[index] > 0))
     {
       SetPreBomb({center:preBomb.center, radius:bomb_datas[index].rad})
+    }
+  };
+
+  const OnControlChange = (e) => {
+    if(is_my_turn)
+    {
+      SetCityInfoControl(!CityInfoControl);
     }
   };
 
@@ -445,7 +473,7 @@ export default function App() {
   }
 
   return <div>
-    {showStartPage && 
+    {showStartPage &&
     <StartingPage name={name} SetName={SetName} room={room} SetRoom={SetRoom} OnSubmit={onJoinRoom}/>}
     {showRoomPage && 
     <RoomPage room={room} users={users} isLeader={isLeader} OnStartGame={onStartGame} OnLeaveRoom={onLeaveRoom}/>}
@@ -559,29 +587,35 @@ export default function App() {
 
     {showBombBtns &&
     <div className="bomb-btn-container">
-    {bomb_datas.map((bomb_data, index) => (
-      <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) === index) ? " active-bomb-btn" : "")}>
-      <Button
-        className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bomb")}
-        variant="contained"
-        onClick={() => onBombBtnPress(index)}
-      >
-          <p className="bomb-btn-count">{(index !== 0 ? bombCount[index] : "∞")}</p> {" " + bomb_data.text}
-      </Button></div>
-    ))}
-    </div>}
 
-    {showLaunchBtn &&
-    <div className='launch-btn-div'>
+    {showLaunchBtn &&                              // Launch button
+    <div className='bomb-btn-div'>
     <Button
       className="launch-btn"
       variant="contained"
       color="secondary"
       onClick={onLaunch}
-      endIcon={<LocationSearchingIcon />}>
-        Launch
+      endIcon={<LocationSearchingIcon />}
+      style={{justifyContent: "flex-end"}}
+    >
+        <div className="game-btn-label">Launch</div>
     </Button></div>}
+
+    {bomb_datas.map((bomb_data, index) => (    // Bomb buttons
+      <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) === index) ? " active-bomb-btn" : "")}>
+      <Button
+        className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bomb")}
+        variant="contained"
+        onClick={() => onBombBtnPress(index)}
+        style={{justifyContent: "flex-end"}}
+      >
+          <p className="bomb-btn-count">{(index !== 0 ? bombCount[index] : "∞")}</p> <div className="game-btn-label">{" " + bomb_data.text}</div>
+      </Button></div>
+    ))}
     
+    </div>}
+    
+    {game_state !== PREGAME &&
     <div className="player-div">
       {users && users.length !== 0 && 
       users.map((user, index) => (
@@ -593,7 +627,31 @@ export default function App() {
           css_color={GetCSSColor(GetPlayerColorIdx(user.id))}
           />
       ))}
-    </div>
+    </div>}
+    
+    {game_state !== PREGAME &&
+    <div className="mouse-container">
+      {showBombBtns &&
+       <div className="mouse-div">
+        Bomb Selection
+        <RightMouse css_color="white"/>
+      </div>}
+      <div className="mouse-div">
+        City Info
+        <LeftMouse css_color="white"/>
+      </div>
+    </div>}
+    
+    {game_state !== PREGAME &&
+    <div className="control-switch-div">
+      <FormControlLabel
+        control={<Switch checked={!CityInfoControl} onChange={OnControlChange} />}
+        label={(CityInfoControl ? "City Info" : "Bomb Select")}
+        labelPlacement="top"
+      />
+    </div>}
+
+    
 
   </div>
 }

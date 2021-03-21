@@ -33,7 +33,7 @@ export default function StartingPage(props) {
   return <div className="StartPage">
     <div className="StartPage-background">
       <div className="HomePage">
-        <img src={process.env.PUBLIC_URL + '/logo.png'} alt="World Domination"/>
+        <img className="logo" src={process.env.PUBLIC_URL + '/logo.png'} alt="World Domination"/>
         {false && <h1 className="title">WORLD DOMINATION</h1>}
 
         <form className="HomePageForm" onSubmit={props.OnSubmit}>
@@ -82,6 +82,13 @@ export default function StartingPage(props) {
               <li>Restrict capital selection to a single country or continent and only use the smallest bombs.</li>
               <li>Add restrictions to what words may be use in questions.</li>
           </ol>
+          <p className="WaysToPlayText">
+            Get Creative!
+            <br/>
+          </p>
+        </div>
+        <div className="attributes">
+          <div>Icons made by <a href="https://www.freepik.com" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
         </div>
       </div>
     </div>

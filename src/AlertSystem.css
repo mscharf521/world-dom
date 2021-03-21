@@ -8,6 +8,7 @@
     display: flex;
     justify-content: center;
     pointer-events: none;
+    overflow: hidden;
 }
 
 .AlertSystem {
@@ -17,8 +18,7 @@
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
-    overflow-y: hidden;
-    overflow-x: visible;
+    overflow: hidden;
     align-content: center;
     pointer-events: none;
     padding-top: 10px;
@@ -43,4 +43,16 @@
 .Alert:hover {
     transform: scale(1.1);
     cursor: pointer;
+}
+
+
+@media only screen and (max-width: 812px) {
+    .AlertSystem {
+        width: 70vw;
+        padding-top: 100px;
+    }
+
+    .Alert {
+        font-size: 1.1rem;
+    }
 }

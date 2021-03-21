@@ -25,14 +25,15 @@ export default function CityInfo(props) {
 
   return <div className="city-info">
       <div className="top-div">
-        <img src={"https://www.countryflags.io/" + props.cityinfo.country_code.toLowerCase() + "/flat/64.png"} alt={props.cityinfo.country}></img>
+        <img className="flag" src={"https://www.countryflags.io/" + props.cityinfo.country_code.toLowerCase() + "/flat/64.png"} alt={props.cityinfo.country}></img>
         <h2 className="cityname">{ props.cityinfo.name }</h2>
       </div>
       <h3 className="countryname">{ props.cityinfo.country }</h3>
 
       <h4 className="population">Population: {numberWithCommas(props.cityinfo.pop)}</h4>
-      <div className="wiki-btn">
+      <div className="wiki-btn-div">
         <Button
+          className="wiki-btn"
           variant="contained"
           color="primary"
           onClick={OnWikiClick}>

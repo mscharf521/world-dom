@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
 
+.logo {
+    height: auto;
+}
+
 .title {
     font-family: 'Roboto', sans-serif;
     position: absolute;
@@ -48,6 +52,12 @@
     top: 50px;
     left: 50px;
     transition: all .1s ease-in-out;
+    display: flex;
+    justify-items: center;
+}
+
+.kofi-btn img {
+    margin:auto;
 }
 
 .kofi-btn:hover {
@@ -102,4 +112,40 @@
 .WaysToPlayList {
     font-size: 130%;
     padding: 0 100px;
+}
+
+.attributes {
+    display: flex;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+@media only screen and (max-width: 812px) {
+.logo {
+    width: 60vw;
+}
+
+.kofi-btn {
+    position: absolute;
+    top: 20px;
+    left: 30vw;
+    width: 40vw;
+    height: auto;
+}
+
+.HowToPlayText {
+    font-size: 100%;
+    padding: 0 20px;
+}
+
+.WaysToPlayText {
+    font-size: 100%;
+    padding: 0 20px;
+}
+
+.WaysToPlayList {
+    font-size: 100%;
+    padding: 0 40px;
+}
 }

@@ -4,9 +4,9 @@
     position: absolute;
     width: 65vw;
     height: 50vh;
-    z-index: 20;
-    top: 15vw;
-    left: 30vh;
+    z-index: 50;
+    top: 25vh;
+    left: 17.5vw;
     border-radius: 20px;
     box-shadow: 0px 0px 20px 0px black;
     display: flex;
@@ -48,4 +48,29 @@
 
 .ResultPageLeaveBtn {
     top: 20px;
+}
+
+
+@media only screen and (max-width: 812px) {
+    .ResultPage {
+        width: 65vw;
+        height: 40vh;
+        top: 30vh;
+        left: 17.5vw;
+    }
+    
+    .result {
+        text-align: center;
+        font-size: 300%;
+        color: snow; 
+        text-shadow: 2px 2px black;
+    }
+
+    .ResultPageHideBtn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width:  30px;
+        height: 30px;
+    }
 }

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
-
 .App {
   text-align: center;
 }
@@ -32,6 +30,10 @@
   width: 100%;
 }
 
+.game-btn-label {
+  font-size: 100%;
+}
+
 .bomb-btn-container {
   position: absolute;
   z-index: 10;
@@ -39,7 +41,7 @@
   min-width: 160px;
   height: auto;
   right: 20px;
-  top: 25vh;
+  top: 50vh;
   display: flex;
   flex-direction: column-reverse;
 }
@@ -47,12 +49,24 @@
 .bomb-btn-div {
   width: 100%;
   margin-top: 10px;
-  height: 5vh;
+  height: auto;
 }
 
 .bomb-btn {
   width: 100%;
   height: 100%;
+}
+
+.bomb-slider-container {
+  position: absolute;
+  z-index: 10;
+  width: 50px;
+  height: 40vh;
+  right: 20px;
+  top: 25vh;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  padding: 20px 0px;
 }
 
 .has-bomb {
@@ -71,16 +85,6 @@
   font-size:150%;
   position: absolute;
   left: 10px;
-}
-
-.launch-btn-div {
-  position: absolute;
-  z-index: 10;
-  width: 15vw;
-  min-width: 160px;
-  height: auto;
-  right: 20px;
-  top: 75vh;
 }
 
 .launch-btn {
@@ -112,4 +116,85 @@
   font-size: 200%;
   color: snow;
   text-shadow: 2px 2px black;
+}
+
+.mouse-container {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  bottom: 25px;
+  right: 80px;
+}
+
+.mouse-div {
+  display: flex;
+  flex-direction: row;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 0 0 10px;
+  border-radius: 10px;
+  color: white;
+  margin-bottom: 5px;
+}
+
+.control-switch-div {
+  display: none;
+}
+
+@media only screen and (max-width: 812px) {
+  .player-div {
+    flex-direction: column;
+  }
+  
+  .info-text-div {
+    bottom: 20vh;
+    left: 20vw;
+    width: 60vw;
+    border-radius: 20px;
+  }
+  .info-text {
+    font-size: 110%;
+  }
+
+  .sel-cap-btn-div {
+    width: 50vw;
+    height: auto;
+    left: 25vw;
+    top: 65vh;
+  }
+
+  .game-btn-label {
+    font-size: 70%;
+  }
+
+  .bomb-btn-container {
+    width: 30vw;
+    min-width: 30px;
+    right: 5px;
+    top: 50vh;
+  }
+
+  .bomb-btn-count {
+    font-size:100%;
+    margin-left: -2px;
+  }
+
+  .mouse-container {
+    display: none;
+  }
+
+  .control-switch-div {
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    position: absolute;
+    bottom: 30px;
+    right: 60px;
+    width: 110px;
+    white-space: nowrap;
+    border-radius: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+  }
 }
