@@ -25,11 +25,6 @@ export default function StartingPage(props) {
     props.SetRoom(e.target.value)
   }
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  })
-
-
   return <div className="StartPage">
     <div className="StartPage-background">
       <div className="HomePage">

@@ -31,8 +31,8 @@ const socket = io.connect('https://world-dom-backend.herokuapp.com/')
 
 const start_zoom = 2;//10;
 const mapContainerStyle = {
-  width: "100vw",
-  height: "100vh"
+  width: "100%",
+  height: "100%"
 }
 const start_center = {
     lat: 0,//lat: 38.6270,
@@ -493,6 +493,7 @@ export default function App() {
     <ResultPage result={ResultPageData.result} OnHide={onHideResult} OnLeave={onLeaveRoom} /> }
 
     {isLoaded &&
+    <div className="Map-div">
     <GoogleMap 
       className="Map"
       mapContainerStyle={mapContainerStyle}
@@ -567,7 +568,7 @@ export default function App() {
         options={{clickable:false}}
       />}
 
-    </GoogleMap>
+    </GoogleMap></div>
     }
 
     {showSelCityInfo && selectedCity &&
