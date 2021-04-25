@@ -18,6 +18,12 @@
     flex-direction: row;
 }
 
+.flag {
+    margin-top: 5px;
+    width: 64px;
+    height: 48px;
+}
+
 .cityname {
     margin: 10px 0 0 5px;
     text-overflow: ellipsis;

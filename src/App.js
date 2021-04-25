@@ -56,7 +56,8 @@ const options = {
 
 const PREGAME = 0;
 const CAPSEL = 1;
-const GAME = 2;
+const WAIT = 2
+const GAME = 3;
 
 let game_state = PREGAME; 
 let cap_count = 0;
@@ -159,6 +160,13 @@ export default function App() {
   const ctrlRef = useRef(CityInfoControl);
   useEffect(() => {ctrlRef.current = CityInfoControl})
 
+  useEffect(() => {
+    if(game_state != PREGAME)
+    {
+      window.scrollTo(0, 0)
+    }
+  })
+
 
   useEffect(() => {
     socket.on('connect_error', function(err){
@@ -212,7 +220,7 @@ export default function App() {
     })
 
     socket.on('next-turn', ({userID}) => {
-      if(game_state === CAPSEL)
+      if(game_state === CAPSEL || game_state === WAIT)
       {
         game_state = GAME;
         SetInfoText({show: false, text:""})
@@ -410,6 +418,7 @@ export default function App() {
       }
       SetBombCount(new_bombCount);
       cap_buffer = [];
+      game_state = WAIT;
     }
     SetShowSelCapBtn(false);
     SetShowSelCityMarker(false);

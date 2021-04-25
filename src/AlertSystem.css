@@ -19,13 +19,20 @@
     flex-direction: column;
     flex-wrap: wrap;
     overflow: hidden;
-    align-content: center;
+    align-content: flex-start;
     pointer-events: none;
     padding-top: 10px;
 }
 
+.Alert-buffer {
+    width: 100%;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+}
+
 .Alert {
-    width: 80%;
+    width: 90%;
     height: auto;
     border-radius: 20px;
     text-align: center;

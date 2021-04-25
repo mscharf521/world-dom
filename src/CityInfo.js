@@ -25,7 +25,7 @@ export default function CityInfo(props) {
 
   return <div className="city-info">
       <div className="top-div">
-        <img className="flag" src={"https://www.countryflags.io/" + props.cityinfo.country_code.toLowerCase() + "/flat/64.png"} alt={props.cityinfo.country}></img>
+        <img className="flag" src={"https://flagcdn.com/256x192/" + props.cityinfo.country_code.toLowerCase() + ".png"} alt={props.cityinfo.country}></img>
         <h2 className="cityname">{ props.cityinfo.name }</h2>
       </div>
       <h3 className="countryname">{ props.cityinfo.country }</h3>

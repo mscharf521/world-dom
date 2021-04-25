@@ -153,7 +153,7 @@
   }
   
   .info-text-div {
-    bottom: 20vh;
+    bottom: 16vh;
     left: 20vw;
     width: 60vw;
     border-radius: 20px;
@@ -166,7 +166,7 @@
     width: 50vw;
     height: auto;
     left: 25vw;
-    top: 65vh;
+    top: 56vh;
   }
 
   .game-btn-label {

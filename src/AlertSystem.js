@@ -5,6 +5,7 @@ export default function AlertSystem(props) {
 
     const renderAlerts = () => {
         return props.alerts.map(({text, id, OnClickFunc}, index) => (
+        <div className="Alert-buffer">
           <div key={index} className="Alert" onClick={function()
             {
                 props.removeAlert(id); 
@@ -16,6 +17,7 @@ export default function AlertSystem(props) {
           >
               {text}
           </div>
+        </div>
         ))
       }
 
