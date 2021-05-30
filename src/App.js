@@ -114,7 +114,9 @@ export default function App() {
 
   const [CityInfoControl, SetCityInfoControl] = useState(true);
 
+  const [hideChat, SetHideChat] = useState(true);
   const [chat, SetChat] = useState([]);
+  //const [chat, SetChat] = useState([{m_name:"user", m_message:"message", color:"Crimson"},{m_name:"user", m_message:"message", color:"Crimson"},{m_name:"user", m_message:"message", color:"Crimson"}]);
   const [message, SetMessage] = useState("");
 
   function SetStartState()
@@ -389,6 +391,11 @@ export default function App() {
     SetResultPageData({show: false, result: null})
   };
 
+  const OnHideChatClicked = e => {
+    e.preventDefault();
+    SetHideChat(!hideChat)
+  }
+
   const onSelCap = e => {
     e.preventDefault();
     cap_buffer.push({capinfo:selectedCity, discovered: false});
@@ -493,7 +500,7 @@ export default function App() {
     <AlertSystem alerts={alerts} removeAlert={removeAlert}/>
 
     {game_state !== PREGAME && 
-    <Chat chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg}/>}
+    <Chat hideChat={hideChat} chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg} OnHideChatClicked={OnHideChatClicked}/>}
 
     {InfoText.show &&
     <div className="info-text-div"><h1 className="info-text">{InfoText.text}</h1></div>}

@@ -17,34 +17,42 @@ export default function Chat(props) {
     ))
   }
 
+  const HideChatClass = (hide) => {return (hide ? "ChatHide" : "ChatShow")}
+  const HideChatBtnText = (hide) => {return (hide ? "Show Chat" : "Hide Chat")}
+
   const onTextChange = (e) => {
     props.SetMessage(e.target.value)
   }
 
-  return <div className="Chat">
-    <div className='render-chat'>
-      {renderChat()}
-      <AlwaysScrollToBottom />
-    </div>
+  return <div className="ChatWrapper">
+    <Button className="HideChatBtn" onClick={props.OnHideChatClicked}>
+      {HideChatBtnText(props.hideChat)}
+    </Button>
+    <div className={"Chat " + HideChatClass(props.hideChat)}>
+      <div className='render-chat'>
+        {renderChat()}
+        <AlwaysScrollToBottom />
+      </div>
 
-    
-    <form onSubmit={props.OnSend} className="message-field">
-      <TextField 
-        className="message-text-field"
-        name="message"
-        autoComplete='off'
-        onChange={e => onTextChange(e)}
-        value={props.message}
-        label="Message"
-        variant="outlined"/>
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={props.OnSend}
-      >
-        <SendIcon/>
-      </Button>
-    </form>
+      
+      <form onSubmit={props.OnSend} className="message-field">
+        <TextField 
+          className="message-text-field"
+          name="message"
+          autoComplete='off'
+          onChange={e => onTextChange(e)}
+          value={props.message}
+          label="Message"
+          variant="outlined"/>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={props.OnSend}
+        >
+          <SendIcon/>
+        </Button>
+      </form>
+    </div>
   </div>
 }
 

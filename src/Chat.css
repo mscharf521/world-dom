@@ -1,11 +1,36 @@
-.Chat {
+.HideChatBtn {
+    width: auto;
+    height: 40px;
+    position: absolute;
+    z-index: 100;
+    transition: all 0.25s ease-in-out;
+}
+
+.ChatWrapper {
     position: absolute;
     bottom: 0px;
     left: 0px;
     z-index: 10;
+}
+
+.Chat {
+    z-index: 10;
     background-color: azure;
     width: 30vw;
-    border-radius: 0 8px 0 0;
+    height: auto;
+    border-radius: 10px;
+    transition: all 0.25s ease-in-out;
+    overflow: hidden;
+}
+
+.ChatShow {
+    max-height: 100vh;
+    padding: 5px 0 0 0;
+}
+
+.ChatHide {
+    max-height: 0px;
+    padding: 0 0 0 0;
 }
 
 .render-chat {
