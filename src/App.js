@@ -377,7 +377,15 @@ export default function App() {
 
   const onStartGame = e => {
     e.preventDefault();
-    socket.emit('host-start-game', {room});
+    if( users.length < 2 )
+    {
+      addAlert("More players needed to start the game.", null)
+    }
+    else
+    {
+      socket.emit('host-start-game', {room});
+    }
+
   };
 
   const onLeaveRoom = e => {
