@@ -21,7 +21,20 @@
 .flag {
     margin-top: 5px;
     width: 64px;
+    height: 64px;
+}
+
+.flag2 {
+    margin-top: 5px;
+    width: 64px;
     height: 48px;
+}
+
+.flag3 {
+    margin-top: 10px;
+    margin-bottom: 8px;
+    width: 64px;
+    height: 40px;
 }
 
 .cityname {

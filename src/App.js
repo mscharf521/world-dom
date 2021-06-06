@@ -163,7 +163,7 @@ export default function App() {
   useEffect(() => {ctrlRef.current = CityInfoControl})
 
   useEffect(() => {
-    if(game_state != PREGAME)
+    if(game_state !== PREGAME)
     {
       window.scrollTo(0, 0)
     }
@@ -683,7 +683,7 @@ export default function App() {
 
 async function GetCityInfoFromLatLng(lat, lng, rad) {
     // Make API call passing in LAT LNG
-    let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-1000&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
+    let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-500&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
     let data = await response.json()
     let cityinfo = null
     if(data.records.length > 0)
