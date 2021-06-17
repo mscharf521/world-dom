@@ -628,14 +628,16 @@ export default function App() {
 
     {bomb_datas.map((bomb_data, index) => (    // Bomb buttons
       <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) === index) ? " active-bomb-btn" : "")}>
-      <Button
-        className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bomb")}
-        variant="contained"
-        onClick={() => onBombBtnPress(index)}
-        style={{justifyContent: "flex-end"}}
-      >
-          <p className="bomb-btn-count">{(index !== 0 ? bombCount[index] : "∞")}</p> <div className="game-btn-label">{" " + bomb_data.text}</div>
-      </Button></div>
+        <Button
+          className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bomb")}
+          variant="contained"
+          onClick={() => onBombBtnPress(index)}
+          style={{justifyContent: "flex-end"}}
+        >
+            <div className="game-btn-label">{" " + bomb_data.text}</div>
+        </Button>
+        <p className="bomb-btn-count">{(index !== 0 ? bombCount[index] : "∞")}</p> 
+      </div>
     ))}
     
     </div>}

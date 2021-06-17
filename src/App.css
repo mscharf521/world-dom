@@ -87,9 +87,11 @@
 }
 
 .bomb-btn-count {
-  font-size:150%;
+  font-size:100%;
   position: absolute;
   left: 10px;
+  display: inline-block;
+  line-height: 0.5;
 }
 
 .launch-btn {
@@ -183,6 +185,7 @@
   .bomb-btn-count {
     font-size:100%;
     margin-left: -2px;
+    line-height: 0;
   }
 
   .mouse-container {

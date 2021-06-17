@@ -45,7 +45,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     position: relative;
-    top: 5px;
+    vertical-align:bottom;
 }
 
 .message-field {
