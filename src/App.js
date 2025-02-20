@@ -27,7 +27,8 @@ import { cap_path } from "./CapSymbol"
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 
 //const socket = io.connect('http://localhost:4000')
-const socket = io.connect('https://world-dom-backend.herokuapp.com/')
+// const socket = io.connect('https://world-dom-backend.herokuapp.com/')
+const socket = io.connect('https://world-dom-backend-1033505180612.us-central1.run.app/')
 
 const start_zoom = 2;//10;
 const mapContainerStyle = {
@@ -407,6 +408,7 @@ export default function App() {
   const onSelCap = e => {
     e.preventDefault();
     cap_buffer.push({capinfo:selectedCity, discovered: false});
+    console.log(cap_buffer);
     // If we have selected enough caps then send them and switch to waiting
     if(cap_buffer.length === cap_count)
     {
@@ -685,18 +687,24 @@ export default function App() {
 
 async function GetCityInfoFromLatLng(lat, lng, rad) {
     // Make API call passing in LAT LNG
-    let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-500&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
+    // let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-500&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
+    let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-1000&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
     let data = await response.json()
     let cityinfo = null
     if(data.records.length > 0)
     {
       let info = data.records[0].fields
+      console.log("info: ");
+      console.log(info);
       cityinfo = {
         name:         info.name,
         pop:          info.population,
-        lat:          parseFloat(info.latitude),
-        lng:          parseFloat(info.longitude),
-        country:      info.country,
+        // lat:          parseFloat(info.latitude),
+        lat:          parseFloat(info.coordinates[0]),
+        // lng:          parseFloat(info.longitude),
+        lng:          parseFloat(info.coordinates[1]),
+        // country:      info.country,
+        country:      info.cou_name_en,
         country_code: info.country_code
       }
     }
