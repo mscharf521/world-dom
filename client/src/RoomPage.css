@@ -10,8 +10,5 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-}
-
-.StartPageLeaveBtnDiv {
-    margin-top: 20px;
+    gap: 20px;
 }

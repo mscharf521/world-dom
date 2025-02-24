@@ -1,7 +1,8 @@
 import React from 'react'
-import Button from '@material-ui/core/Button'
+import { Button } from '@mui/material'
 import './ResultPage.css'
 import './font.css'
+import xmark from './assets/x-mark.png'
 
 export const WIN = 0;
 export const TIE = 1;
@@ -14,13 +15,13 @@ export default function ResultPage(props) {
     
     <div className="ResultPageHideBtn" 
         onClick={props.OnHide}>
-      <img src={process.env.PUBLIC_URL + '/x-mark.png'} alt={"Close"}/>
+      <img src={xmark} alt={"Close"}/>
     </div>
     
     <Button
         className="ResultPageLeaveBtn result-btn"
         variant="contained"
-        color="secondary"
+        color="error"
         onClick={props.OnLeave}>Leave</Button>
   </div>
 }

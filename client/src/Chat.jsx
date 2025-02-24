@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from "react";
-import TextField from '@material-ui/core/TextField'
-import Button from '@material-ui/core/Button'
-import SendIcon from '@material-ui/icons/Send';
+import { TextField, Button } from '@mui/material'
+import { Send } from '@mui/icons-material';
 import './Chat.css'
 import './font.css'
 
@@ -49,7 +48,7 @@ export default function Chat(props) {
           color="primary"
           onClick={props.OnSend}
         >
-          <SendIcon/>
+          <Send/>
         </Button>
       </form>
     </div>

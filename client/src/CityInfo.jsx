@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import Button from '@material-ui/core/Button'
+import { Button } from '@mui/material'
 import './CityInfo.css'
 import './font.css'
-
+import earthflag from './assets/earthflag.png'
 
 //let dummycity = {
 //  name: "st louis",
@@ -41,7 +41,7 @@ export default function CityInfo(props) {
     {
       ev.target.onError = null;
       ev.target.className = "flag3";
-      ev.target.src = process.env.PUBLIC_URL + '/earthflag.png'
+      ev.target.src = earthflag
     }
   }
 

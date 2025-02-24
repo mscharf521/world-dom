@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import io from "socket.io-client"
-import Button from '@material-ui/core/Button'
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Switch from '@material-ui/core/Switch';
-import LocationSearchingIcon from '@material-ui/icons/LocationSearching';
+import { Button, FormControlLabel, Switch } from '@mui/material'
+import { LocationSearching } from '@mui/icons-material'
 import {
   GoogleMap,
   useLoadScript,
@@ -26,9 +23,24 @@ import './font.css'
 import { cap_path } from "./CapSymbol"
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 
-//const socket = io.connect('http://localhost:4000')
-// const socket = io.connect('https://world-dom-backend.herokuapp.com/')
-const socket = io.connect('https://world-dom-backend-1033505180612.us-central1.run.app/')
+// WebSocket connection
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+const ws = new WebSocket(WS_URL);
+
+let my_connection_id = null;
+
+// Game states
+const PREGAME = 0;
+const CAPSEL = 1;
+const WAIT = 2;
+const GAME = 3;
+
+let game_state = PREGAME;
+let cap_count = 0;
+let cap_buffer = [];
+let is_my_turn = false;
+let player_colors = [];
+let next_alert_id = 0;
 
 const start_zoom = 2;//10;
 const mapContainerStyle = {
@@ -55,16 +67,6 @@ const options = {
   gestureHandling: 'greedy',
 }
 
-const PREGAME = 0;
-const CAPSEL = 1;
-const WAIT = 2
-const GAME = 3;
-
-let game_state = PREGAME; 
-let cap_count = 0;
-let cap_buffer = [];
-let is_my_turn = false;
-
 const bomb_datas = [
   {rad: 30000,   text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
   {rad: 100000,  text:"5 megaton",  base_cnt: 10,  bonus_per: 500000,   zoom: 6 },
@@ -72,13 +74,9 @@ const bomb_datas = [
   {rad: 1000000, text:"50 megaton", base_cnt: 1,   bonus_per: 5000000,  zoom: 5 }
 ];
 
-let player_colors = [];
-
-let next_alert_id = 0;
-
 export default function App() {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
   });
 
   if(loadError) console.log(loadError);
@@ -170,99 +168,130 @@ export default function App() {
     }
   })
 
-
   useEffect(() => {
-    socket.on('connect_error', function(err){
-      console.log(`connect_error due to ${err.message}`);
-    })
+    ws.onopen = () => {
+      console.log('Connected to WebSocket server');
+    };
 
-    socket.on('message', ({m_name, m_message, fromID}) => {
-      SetChat((current) => ([...current, { m_name, m_message, color:GetCSSColor( GetPlayerColorIdx(fromID) ) }]))
-    })
+    ws.onclose = () => {
+      console.log('Disconnected from WebSocket server');
+      addAlert('Lost connection to server', null);
+    };
 
-    socket.on('joined-room-result', ({success, leader}) => {
-      if( success )
-      {
-        SetShowRoomPage(true);
-        SetShowStartPage(false);
-        SetIsLeader(leader);
-      }
-      else
-      {
-        console.log("failed to join room")
-      }
-    })
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
 
-    socket.on('start-game', ({num_caps}) => {
-      // start game
-      SetShowStartPage(false);
-      SetShowRoomPage(false);
-      game_state = CAPSEL;
-      cap_count = num_caps;
-      SetInfoText({show:true, text:"Select " + num_caps + " Capital Cit" + ( (num_caps > 1) ? "ies" : "y")})
-    })
-
-    socket.on('room-users', ({users}) => {
-      SetUsers(users);
-    })
-
-    socket.on('bomb-update', ({bombs}) => {
-      SetBombs(bombs);
-      //mapRef.current.panTo(bombs[bombs.length - 1].center)
-      //mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bombs[bombs.length - 1].radius)].zoom)
-
-      let idx = usersRef.current.findIndex(user => user.id === bombs[bombs.length - 1].ownerID)
-      if(idx !== -1)
-      {
-        let user = usersRef.current[idx];
-        //let color = GetCSSColor(GetPlayerColorIdx(user.id)) || "black";
-        //addAlert("<span style=" + color + ">" + user.username + "</span>" + "dropped a bomb!", function() {bombPanToLoc(bombs[bombs.length - 1])}, 10000)
-        addAlert(user.username + " dropped a bomb!", function() {bombPanToLoc(bombs[bombs.length - 1])}, 10000)
-        console.log(user.username + " dropped a bomb! Click to show")
-      }
-    })
-
-    socket.on('next-turn', ({userID}) => {
-      if(game_state === CAPSEL || game_state === WAIT)
-      {
-        game_state = GAME;
-        SetInfoText({show: false, text:""})
-      }
-
-      SetCurTurnID(userID);
-
-      if(userID === socket.id) // my turn
-      {
-        addAlert("It's your turn", null)
-        is_my_turn = true;
-        SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-        SetShowBombBtns(true);
-      }
+    ws.onmessage = (event) => {
+      const payload = JSON.parse(event.data);
       
-    })
+      switch (payload.type) {
+        case 'message':
+          SetChat((current) => ([
+            ...current, 
+            { 
+              m_name: payload.data.username, 
+              m_message: payload.data.message, 
+              color: GetCSSColor(GetPlayerColorIdx(payload.data.userId)) 
+            }
+          ]));
+          break;
 
-    socket.on('win', () => {
-      if(game_state === GAME)
-      {
-        SetResultPageData({show:true, result:WIN});
+        case 'connection-id':
+          my_connection_id = payload.data.connectionId;
+          break;
+
+        case 'joined-room-result':
+          if (payload.data.success) {
+            SetShowRoomPage(true);
+            SetShowStartPage(false);
+            SetIsLeader(payload.data.leader);
+          } else {
+            console.log("failed to join room");
+          }
+          break;
+
+        case 'start-game':
+          SetShowStartPage(false);
+          SetShowRoomPage(false);
+          game_state = CAPSEL;
+          cap_count = payload.data.num_caps;
+          SetInfoText({
+            show: true, 
+            text: `Select ${payload.data.num_caps} Capital Cit${payload.data.num_caps > 1 ? 'ies' : 'y'}`
+          });
+          break;
+
+        case 'room-users':
+          SetUsers(payload.data.users);
+          break;
+
+        case 'bomb-update':
+          SetBombs(payload.data.bombs);
+          const lastBomb = payload.data.bombs[payload.data.bombs.length - 1];
+          const user = usersRef.current.find(u => u.connectionId === lastBomb.ownerID);
+          if (user) {
+            addAlert(
+              `${user.username} dropped a bomb!`,
+              () => bombPanToLoc(lastBomb),
+              10000
+            );
+          }
+          break;
+
+        case 'next-turn':
+            if(game_state === CAPSEL || game_state === WAIT)
+            {
+              game_state = GAME;
+              SetInfoText({show: false, text:""})
+            }
+
+            SetCurTurnID(payload.data.userID);
+      
+            if(payload.data.userID === my_connection_id) // my turn
+            {
+              addAlert("It's your turn", null)
+              is_my_turn = true;
+              SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+              SetShowBombBtns(true);
+            }
+            break;
+      
+        case 'win':
+            if(game_state === GAME)
+            {
+              SetResultPageData({show:true, result:WIN});
+            }
+            break;
+      
+        case 'tie':
+            if(game_state === GAME)
+            {
+              SetResultPageData({show:true, result:TIE});
+            }
+            break;
+      
+        case 'lose':
+            if(game_state === GAME)
+            {
+              SetResultPageData({show:true, result:LOSE});
+            }
+            break;
+      
+        default:
+            console.log("Unknown message type:", payload.type);
+            break;
       }
-    })
+    };
+  }, []);
 
-    socket.on('tie', () => {
-      if(game_state === GAME)
-      {
-        SetResultPageData({show:true, result:TIE});
-      }
-    })
-
-    socket.on('lose', () => {
-      if(game_state === GAME)
-      {
-        SetResultPageData({show:true, result:LOSE});
-      }
-    })
-
-  }, [])
+  const sendWSMessage = (action, data) => {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ action, data }));
+    } else {
+      console.error('WebSocket is not connected');
+    }
+  };
 
   const mapRef = React.useRef();
   const onMapLoad = React.useCallback((map) => {
@@ -281,7 +310,6 @@ export default function App() {
       // Found city
       if(city_info)
       {
-        //console.log(city_info)
         SetSelectedCity(city_info)
         SetShowSelCityMarker(true);
         SetShowSelCityInfo(true);
@@ -321,16 +349,13 @@ export default function App() {
   }, []);
 
   const onMapRightClick = useCallback((e) => {
-    console.log("Right click")
     onBombPosSelect(e);
   }, []);
 
   const onBombPosSelect = (e) => {
-    console.log("BombSelect")
     if(game_state === GAME && is_my_turn)
     {
       SetPreBomb((current) => {
-        console.log(GetIndexFromRadius(current.radius))
         return {center:{lat:e.latLng.lat(), lng:e.latLng.lng()}, radius:current.radius}})
       SetShowLaunchBtn(true);
     }
@@ -350,29 +375,27 @@ export default function App() {
 
   const onSendMsg = e => {
     e.preventDefault();
-    if(message && message !== "")
-    {
-      const {m_room, m_name, m_message} = {m_room: room, m_name:name, m_message:message};
-      socket.emit('client-message', {m_room, m_name, m_message});
+    if (message && message !== "") {
+      sendWSMessage('client-message', {
+        roomId: room,
+        message: message
+      });
       SetMessage("");
     }
-    //console.log(selectedCity)
   };
 
   const onJoinRoom = e => {
     e.preventDefault();
-    if( name !== "" && room !== "" )
-    {
-      const {m_name, m_room} = {m_name:name, m_room:room};
-      socket.emit('join-room', {m_name, m_room});
-    }
-    else if( room === "" )
-    {
-      addAlert("Invalid room name", 2000)
-    }
-    else if( name === "" )
-    {
-      addAlert("Invalid user name", 2000)
+    if (name !== "" && room !== "") {
+      sendWSMessage('req-connection-id', {});
+      sendWSMessage('join-room', {
+        roomId: room,
+        username: name
+      });
+    } else if (room === "") {
+      addAlert("Invalid room name", 2000);
+    } else if (name === "") {
+      addAlert("Invalid user name", 2000);
     }
   };
 
@@ -384,14 +407,14 @@ export default function App() {
     }
     else
     {
-      socket.emit('host-start-game', {room});
+      sendWSMessage('host-start-game', {room});
     }
 
   };
 
   const onLeaveRoom = e => {
     e.preventDefault();
-    socket.emit('leave-room', {room});
+    sendWSMessage('leave-room', {room});
     SetStartState();
   };
 
@@ -414,7 +437,7 @@ export default function App() {
     {
       SetInfoText({show: true, text:"Waiting for other players"})
 
-      socket.emit("cap-sel", {room, caps:cap_buffer});
+      sendWSMessage("cap-sel", {room, caps:cap_buffer});
 
       let total_pop = 0;
       for(var cap of cap_buffer)
@@ -422,15 +445,12 @@ export default function App() {
         total_pop += cap.capinfo.pop;
       }
 
-      console.log("total pop: " + total_pop);
-
       let new_bombCount = [999999999] // set first type to be very high number
       for(var i = 1; i < bomb_datas.length; i+=1)
       {
         let this_bomb_cnt = bomb_datas[i].base_cnt;
 
         this_bomb_cnt += Math.round( total_pop / bomb_datas[i].bonus_per );
-        //console.log("i: " + i + " bmb: " + this_bomb_cnt)
         new_bombCount.push(this_bomb_cnt)
       }
       SetBombCount(new_bombCount);
@@ -440,7 +460,6 @@ export default function App() {
     SetShowSelCapBtn(false);
     SetShowSelCityMarker(false);
     SetShowSelCityInfo(false);
-    //console.log(cap_buffer)
   };
 
   const onLaunch = e => {
@@ -455,14 +474,11 @@ export default function App() {
       SetShowLaunchBtn(false);
       SetShowBombBtns(false);
       SetCityInfoControl(true);
-      socket.emit("client-turn", {room, bomb:{center:preBomb.center, radius: preBomb.radius, ownerID: socket.id}});
+      sendWSMessage("client-turn", {room, bomb:{center:preBomb.center, radius: preBomb.radius, ownerID: my_connection_id}});
     }
   };
 
   const onBombBtnPress = index => {
-    console.log(is_my_turn)
-    console.log(index)
-    console.log(bombCount[index] > 0)
     if(is_my_turn && (bombCount[index] > 0))
     {
       SetPreBomb({center:preBomb.center, radius:bomb_datas[index].rad})
@@ -480,7 +496,6 @@ export default function App() {
     SetAlerts(current => ([...current, {text, id:next_alert_id, OnClickFunc}]))
     let tmp_id = next_alert_id;
     setTimeout(function() {
-      console.log("remove id: " + tmp_id)
       removeAlert(tmp_id)
     }, duration || 2000)
     next_alert_id += 1;
@@ -492,7 +507,6 @@ export default function App() {
       if(idx !== -1)
       {
         current.splice(idx, 1);
-        console.log(current);
       }
       return [...current];
     })
@@ -550,12 +564,12 @@ export default function App() {
 
       {users.map((user) => (
         user.caps.map((cap, index) => (
-          (cap.discovered || user.id === socket.id) && cap.capinfo &&
+          (cap.discovered || user.connectionId === my_connection_id) && cap.capinfo &&
           <Marker
             position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
             icon={{
               path: cap_path,
-              fillColor: GetCSSColor(GetPlayerColorIdx(user.id)),
+              fillColor: GetCSSColor(GetPlayerColorIdx(user.connectionId)),
               fillOpacity: 0.8,
               strokeWeight: 0,
               scale: ((mapZoom ** 1.3) / 20),
@@ -575,7 +589,7 @@ export default function App() {
           position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
           icon={{
             path: cap_path,
-            fillColor: GetCSSColor(GetPlayerColorIdx(socket.id)),
+            fillColor: GetCSSColor(GetPlayerColorIdx(my_connection_id)),
             fillOpacity: 0.8,
             strokeWeight: 0,
             scale: ((mapZoom ** 1.3) / 20),
@@ -620,9 +634,9 @@ export default function App() {
     <Button
       className="launch-btn"
       variant="contained"
-      color="secondary"
+      color="error"
       onClick={onLaunch}
-      endIcon={<LocationSearchingIcon />}
+      endIcon={<LocationSearching />}
       style={{justifyContent: "flex-end"}}
     >
         <div className="game-btn-label">Launch</div>
@@ -651,9 +665,9 @@ export default function App() {
         <PlayerCard 
           key={index} 
           user={user} 
-          curTurnActive={curTurnID === user.id} 
-          color_class={GetColorBackgroundClass(GetPlayerColorIdx(user.id))} 
-          css_color={GetCSSColor(GetPlayerColorIdx(user.id))}
+          curTurnActive={curTurnID === user.connectionId} 
+          color_class={GetColorBackgroundClass(GetPlayerColorIdx(user.connectionId))} 
+          css_color={GetCSSColor(GetPlayerColorIdx(user.connectionId))}
           />
       ))}
     </div>}
@@ -687,7 +701,6 @@ export default function App() {
 
 async function GetCityInfoFromLatLng(lat, lng, rad) {
     // Make API call passing in LAT LNG
-    // let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-500&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
     let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-1000&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
     let data = await response.json()
     let cityinfo = null
@@ -731,27 +744,23 @@ function GetIndexFromRadius(radius)
   return -1
 }
 
-function GetPlayerColorIdx(userID)
+function GetPlayerColorIdx(connectionId)
 {
-  let index = player_colors.findIndex(pc => pc.id === userID);
+  let index = player_colors.findIndex(pc => pc.id === connectionId);
   if(index === -1) // Player has not been assigned color
   {
     for(let i = 0; i < COLOR_CNT; i++)
     {
       if((player_colors.findIndex(pc => pc.color_idx === i)) === -1)
       {
-        player_colors.push({id:userID, color_idx: i});
-        //console.log("add color entry")
-        //console.log(i)
+        player_colors.push({id:connectionId, color_idx: i});
         return i;
       }
     }
-    //console.log("could not get color index")
     return 0;
   }
   else
   {
-    //console.log(index)
     return player_colors[index].color_idx;
   }
 }

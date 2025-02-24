@@ -1,12 +1,19 @@
-import React, { useRef } from "react";
-import TextField from '@material-ui/core/TextField'
-import Button from '@material-ui/core/Button'
+import React, { useRef, useEffect } from "react";
+import { TextField, Button } from '@mui/material'
 import './StartingPage.css'
 import './font.css'
 
 export default function StartingPage(props) {
 
   const infoRef = useRef();
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if (roomParam) {
+      props.SetRoom(roomParam); // Set the room value from the query parameter
+    }
+  }, []);
 
   function HowToPlayOnClick()
   {
@@ -28,7 +35,7 @@ export default function StartingPage(props) {
   return <div className="StartPage">
     <div className="StartPage-background">
       <div className="HomePage">
-        <img className="logo" src={process.env.PUBLIC_URL + '/logo.png'} alt="World Domination"/>
+        <img className="logo" src={"/logo.png"} alt="World Domination"/>
         {false && <h1 className="title">WORLD DOMINATION</h1>}
 
         <form className="HomePageForm" onSubmit={props.OnSubmit}>
@@ -58,12 +65,12 @@ export default function StartingPage(props) {
           <h1 className="HowToPlayTitle" onClick={HowToPlayOnClick}>How to Play</h1>
           <p className="HowToPlayText">The world is in the midst of a nuclear apocalypse. You lead one of the surviving nations which have been forced into 
             hiding by the nuclear threats of rivaling nations. Each nation is confined to their secret capital cities which are selected at the beginning 
-            of the game. During your turn, you will select a position on the map to drop a buclear bomb in an attempt to discover and destroy enemy capitals. 
+            of the game. During your turn, you will select a position on the map to drop a nuclear bomb in an attempt to discover and destroy enemy capitals. 
             The last one standing wins.
             <br/><br/>
             BEWARE: <br/>You can bomb your own capital and multiple players may have the same capital city.
             <br/><br/>
-            NOTE: <br/>The bigger you capitals are in population, the more bombs you start the game with.
+            NOTE: <br/>The bigger your capitals are in population, the more bombs you start the game with.
           </p>
         </div>
         <div className="WaysToPlayDiv InfoDiv">

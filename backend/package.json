@@ -1,0 +1,22 @@
+{
+  "name": "world-dom-backend",
+  "version": "1.0.0",
+  "description": "WebSocket-based game backend using AWS Lambda",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "deploy": "serverless deploy",
+    "remove": "serverless remove",
+    "start": "serverless offline"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-apigatewaymanagementapi": "^3.750.0",
+    "@aws-sdk/client-dynamodb": "^3.751.0",
+    "@aws-sdk/lib-dynamodb": "^3.751.0"
+  },
+  "devDependencies": {
+    "serverless-offline": "^13.9.0"
+  }
+}
