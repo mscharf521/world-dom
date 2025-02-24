@@ -40,7 +40,6 @@ let cap_count = 0;
 let cap_buffer = [];
 let is_my_turn = false;
 let player_colors = [];
-let next_alert_id = 0;
 
 const start_zoom = 2;//10;
 const mapContainerStyle = {
@@ -234,7 +233,7 @@ export default function App() {
             addAlert(
               `${user.username} dropped a bomb!`,
               () => bombPanToLoc(lastBomb),
-              10000
+              8000
             );
           }
           break;
@@ -250,7 +249,7 @@ export default function App() {
       
             if(payload.data.userID === my_connection_id) // my turn
             {
-              addAlert("It's your turn", null)
+              addAlert("It's your turn", null, 3000)
               is_my_turn = true;
               SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
               SetShowBombBtns(true);
@@ -393,9 +392,9 @@ export default function App() {
         username: name
       });
     } else if (room === "") {
-      addAlert("Invalid room name", 2000);
+      addAlert("Invalid room name", null, 2000);
     } else if (name === "") {
-      addAlert("Invalid user name", 2000);
+      addAlert("Invalid user name", null, 2000);
     }
   };
 
@@ -403,7 +402,7 @@ export default function App() {
     e.preventDefault();
     if( users.length < 2 )
     {
-      addAlert("More players needed to start the game.", null)
+      addAlert("More players needed to start the game.", null, 3000)
     }
     else
     {
@@ -431,7 +430,6 @@ export default function App() {
   const onSelCap = e => {
     e.preventDefault();
     cap_buffer.push({capinfo:selectedCity, discovered: false});
-    console.log(cap_buffer);
     // If we have selected enough caps then send them and switch to waiting
     if(cap_buffer.length === cap_count)
     {
@@ -492,13 +490,16 @@ export default function App() {
     }
   };
 
-  const addAlert = (text, OnClickFunc, duration) => {
-    SetAlerts(current => ([...current, {text, id:next_alert_id, OnClickFunc}]))
-    let tmp_id = next_alert_id;
+  const addAlert = (text, OnClickFunc, duration = 2000) => {
+    const uuid = crypto.randomUUID();
+    SetAlerts(current => ([...current, {text, id:uuid, OnClickFunc}]))
+    scheduleRemoveAlert(uuid, duration);
+  } 
+
+  const scheduleRemoveAlert = (rm_id, duration) => {
     setTimeout(function() {
-      removeAlert(tmp_id)
-    }, duration || 2000)
-    next_alert_id += 1;
+      removeAlert(rm_id)
+    }, duration)
   }
 
   const removeAlert = (rm_id) => {
@@ -707,8 +708,6 @@ async function GetCityInfoFromLatLng(lat, lng, rad) {
     if(data.records.length > 0)
     {
       let info = data.records[0].fields
-      console.log("info: ");
-      console.log(info);
       cityinfo = {
         name:         info.name,
         pop:          info.population,

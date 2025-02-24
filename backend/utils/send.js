@@ -2,7 +2,6 @@ const { ApiGatewayManagementApiClient, PostToConnectionCommand } = require("@aws
 const { getUsersInRoom } = require("./gameData");
 
 const sendToConnection = async (connectionId, data, domainName, stage) => {
-    console.log("sending to connection: ", connectionId, data, domainName, stage);
     let endpoint = `https://${domainName}/${stage}`;
     if(process.env.IS_OFFLINE) endpoint = `http://localhost:3001`;
     

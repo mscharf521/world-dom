@@ -3,7 +3,6 @@ const { sendToConnection } = require("./send");
 
 async function checkWinCondition(room_data, usersInRoom, domainName, stage)
 {
-    console.log("checkWinCondition: ", room_data, usersInRoom, domainName, stage)
     if(room_data && room_data.turnOrder.length > 0)
     {
         let losing_users = []

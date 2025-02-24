@@ -120,7 +120,6 @@ const removeRoom = async (roomId) => {
 
 // USER DATA
 const createUser = async (roomId, connectionId, username) => {
-  console.log("createUser: ", roomId, connectionId, username);
   const user = {
     PK: `ROOM#${roomId}`,
     SK: `USER#${connectionId}`,
@@ -176,7 +175,6 @@ const getUserByConnection = async (connectionId) => {
 };
 
 const setUserCapitals = async (roomId, connectionId, capitals) => {
-  console.log("setUserCapitals: ", roomId, connectionId, capitals);
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: {

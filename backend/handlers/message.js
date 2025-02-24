@@ -50,7 +50,6 @@ exports.handler = async (event) => {
          && !room_data.hasStarted )
         {
             success = true;
-            console.log("found room which has not started")
         }
         // room does not exist
         else if (room_data == null)
@@ -59,16 +58,12 @@ exports.handler = async (event) => {
             room_data = await createRoom(roomId, "");
             success = true;
             leader = true;
-            console.log("making new room")
         }
 
         if(success)
         {
-            console.log("creating user");
-            console.log("username: ", username);
             await createUser(roomId, connectionId, username);
             const usersInRoom = await getUsersInRoom(roomId);
-            console.log("usersInRoom WOW: ", usersInRoom);
             await broadcastToRoom(
               roomId,
               { 
@@ -182,9 +177,6 @@ exports.handler = async (event) => {
             }
         }
 
-        console.log("usersInRoom: ", usersInRoom)
-        console.log("done: ", done)
-
         if(done)
         {
             shuffle(usersInRoom);
@@ -242,8 +234,6 @@ exports.handler = async (event) => {
                 }
             }
         }
-
-        console.log("cap_hit: ", cap_hit)
 
         if(cap_hit)
         {

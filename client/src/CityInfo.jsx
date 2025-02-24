@@ -26,23 +26,14 @@ export default function CityInfo(props) {
   }
 
   function GetFlagSrc() {
-    return "https://www.countryflags.io/" + props.cityinfo.country_code.toLowerCase() + "/flat/64.png";
+    return "https://flagsapi.com/" + props.cityinfo.country_code.toUpperCase() + "/flat/64.png";
   }
 
   function OnFlagImgError(ev) {
-    if(flagErrorCnt === 0)
-    {
-      console.log("here")
-      SetFlagErrorCnt(1);
-      ev.target.className = "flag2";
-      ev.target.src = "https://flagcdn.com/256x192/" + props.cityinfo.country_code.toLowerCase() + ".png";
-    }
-    else // second time erroring so set to error flag
-    {
-      ev.target.onError = null;
-      ev.target.className = "flag3";
-      ev.target.src = earthflag
-    }
+    ev.target.onError = null;
+    ev.target.className = "flag3";
+    ev.target.src = earthflag
+
   }
 
   return <div className="city-info">
