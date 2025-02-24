@@ -2,6 +2,7 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { 
   PutCommand, 
   GetCommand, 
+  DeleteCommand,
   QueryCommand, 
   UpdateCommand,
   DynamoDBDocumentClient 
@@ -9,7 +10,7 @@ const {
 
 const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-const TTL_1_DAY = 1000 * 60 * 60 * 24;
+const TTL_12_HOURS = 1000 * 60 * 60 * 12;
 
 // ROOM DATA
 const createRoom = async (roomId, password) => {
@@ -21,7 +22,7 @@ const createRoom = async (roomId, password) => {
     turnIndex: 0,
     bombs: [],
     num_caps: 3,
-    ttl: Date.now() + TTL_1_DAY
+    ttl: Date.now() + TTL_12_HOURS
   };
 
   await docClient.send(new PutCommand({
@@ -127,7 +128,7 @@ const createUser = async (roomId, connectionId, username) => {
     GSI1SK: roomId,
     username,
     caps: [],
-    ttl: Date.now() + TTL_1_DAY
+    ttl: Date.now() + TTL_12_HOURS
   };
 
   await docClient.send(new PutCommand({

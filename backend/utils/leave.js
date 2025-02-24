@@ -22,7 +22,6 @@ async function leaveRoom(connectionId, domainName, stage)
         {
             await checkWinCondition(room_data, usersInRoom);
 
-            usersInRoom = await getUsersInRoom(user.room);
             await broadcastToRoom(
               user.room,
               {
