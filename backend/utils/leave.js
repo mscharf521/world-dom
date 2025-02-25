@@ -6,6 +6,7 @@ const {
     removeRoom 
 } = require('../utils/gameData');
 const { checkWinCondition } = require('../utils/wincon');
+const { broadcastToRoom } = require('../utils/send');
 
 async function leaveRoom(connectionId, domainName, stage)
 {
