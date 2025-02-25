@@ -28,9 +28,3 @@ html, body {
     padding-right: env(safe-area-inset-right);
   }
 }
-
-/* Prevent text selection */
-.app-header, .counter-controls {
-  user-select: none;
-  -webkit-user-select: none;
-}

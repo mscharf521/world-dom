@@ -22,9 +22,9 @@ export default function RoomPage(props) {
     return roomLink;
   }
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     const roomLink = createRoomLink();
-    navigator.clipboard.writeText(roomLink);
+    await navigator.clipboard.writeText(roomLink);
     setCopyText("Copied!");
 
     // Reset the button text after 2 seconds
