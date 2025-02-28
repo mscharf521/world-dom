@@ -733,7 +733,8 @@ export default function App() {
           curTurnActive={curTurnID === user.connectionId} 
           color_class={GetColorBackgroundClass(GetPlayerColorIdx(user.connectionId))} 
           css_color={GetCSSColor(GetPlayerColorIdx(user.connectionId))}
-          onCapClick={user.connectionId === my_connection_id ? scrollToCapital : null}
+          onCapClick={scrollToCapital}
+          my_board={user.connectionId === my_connection_id}
         />
       ))}
     </div>}

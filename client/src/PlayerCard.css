@@ -33,6 +33,11 @@
     width: 100%;
 }
 
+.cap-div-item:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s ease-in-out;
+}
+
 .bckgrnd-red {
     background: linear-gradient(to right bottom, Crimson, Snow);
 }

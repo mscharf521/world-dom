@@ -6,29 +6,31 @@ import CapSymbol from "./CapSymbol"
 
 function getClassName(active)
 {
-    if(active)
-    {
-        return "player-card active"
-    }
-    else
-    {
-        return "player-card"
-    }
+    return active ? "player-card active" : "player-card";
 }
 
 export default function PlayerCard(props) {
-  const handleCapClick = (capinfo) => {
-    if (props.onCapClick) {
+  const handleCapClick = (capinfo, discovered) => {
+    if (props.onCapClick && canClickCap(discovered)) {
       props.onCapClick(capinfo.lat, capinfo.lng);
     }
   };
+
+  const canClickCap = (discovered) => {
+    return props.my_board || discovered;
+  }
 
   return <div className={getClassName(props.curTurnActive)}>
     <Card className={"player-card-card " + props.color_class} variant="outlined">
       <h3 className="name">{ props.user.username }</h3>
       <div className="cap-div">
         {props.user.caps.map((cap, index) => (
-            <div key={index} onClick={() => handleCapClick(cap.capinfo)}>
+            <div 
+              key={index} 
+              onClick={() => handleCapClick(cap.capinfo, cap.discovered)}
+              style={canClickCap(cap.discovered) ? {cursor: 'pointer'} : {cursor: 'default'}}
+              className={"cap-div-item"}
+            >
               <CapSymbol capinfo={cap} css_color={props.css_color}/>
             </div>
         ))}
