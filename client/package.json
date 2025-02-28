@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "npm run build && aws s3 cp dist s3://world-domination.com --recursive --acl public-read"
+    "s3-upload": "aws s3 cp dist s3://world-domination.com --recursive --acl public-read",
+    "invalidate-cdn": "aws cloudfront create-invalidation --distribution-id E3VRMXDF4WCATT --paths \"/*\"",
+    "deploy": "npm run build && npm run s3-upload && npm run invalidate-cdn"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
