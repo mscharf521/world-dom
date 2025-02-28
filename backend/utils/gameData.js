@@ -204,6 +204,7 @@ const getUserByConnection = async (connectionId) => {
   {
     result.Items[0].room = result.Items[0].GSI1SK;
     result.Items[0].connectionId = result.Items[0].SK.split('#')[1];
+    result.Items[0].username = result.Items[0].username;
     return result.Items[0];
   }
   return null;

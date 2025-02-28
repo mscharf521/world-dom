@@ -1,16 +1,29 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { TextField, Button } from '@mui/material'
 import { Send } from '@mui/icons-material';
 import './Chat.css'
 import './font.css'
 
 export default function Chat(props) {
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [hideChat, SetHideChat] = useState(true);
+
+  useEffect(() => {
+    if (props.chat.length > 0 && hideChat) {
+      setUnreadMessages(prev => prev + 1);
+    }
+  }, [props.chat]);
+
+  const handleChatButtonClick = () => {
+    setUnreadMessages(0);
+    SetHideChat(!hideChat);
+  };
 
   const renderChat = () => {
-    return props.chat.map(({m_name, m_message, color}, index) => (
+    return props.chat.map(({username, message, color}, index) => (
       <div key={index}>
         <h3>
-          <span className="chat-msg-name" style={{color}}>{m_name}</span><span>: {m_message}</span>
+          <span className="chat-msg-name" style={{color}}>{username}</span><span>: {message}</span>
         </h3>
       </div>
     ))
@@ -24,10 +37,19 @@ export default function Chat(props) {
   }
 
   return <div className="ChatWrapper">
-    <Button className="HideChatBtn" onClick={props.OnHideChatClicked}>
-      {HideChatBtnText(props.hideChat)}
+    <Button 
+      variant="contained"
+      onClick={handleChatButtonClick}
+      style={{ position: 'relative', backgroundColor: hideChat ? "#435151" : "#634146" }}
+    >
+      {HideChatBtnText(hideChat)}
+      {unreadMessages > 0 && (
+        <div className="notif">
+          {unreadMessages}
+        </div>
+      )}
     </Button>
-    <div className={"Chat " + HideChatClass(props.hideChat)}>
+    {!hideChat && <div className={"Chat " + HideChatClass(props.hideChat)}>
       <div className='render-chat'>
         {renderChat()}
         <AlwaysScrollToBottom />
@@ -51,7 +73,7 @@ export default function Chat(props) {
           <Send/>
         </Button>
       </form>
-    </div>
+    </div>}
   </div>
 }
 
