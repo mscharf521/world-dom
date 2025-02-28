@@ -219,6 +219,8 @@ exports.handler = async (event) => {
         );
         
         let cap_hit = false;
+        const discoveredCaps = new Set();
+
         for(var user of usersInRoom)
         {
             for(var cap_index in user.caps)
@@ -232,20 +234,23 @@ exports.handler = async (event) => {
                         await discoverUserCap(roomId, user.connectionId, cap_index);
                         cap_hit = true;
 
-                        // Broadcast cap-discover message to the room
-                        await broadcastToRoom(
-                          roomId,
-                          {
-                            type: 'cap-discover',
-                            data: {
-                              capInfo: cap.capinfo
-                            }
-                          },
-                          connectionId,
-                          domainName,
-                          stage,
-                          usersInRoom
-                        );
+                        if (!discoveredCaps.has(cap.capinfo.name)) {  
+                            discoveredCaps.add(cap.capinfo.name);
+
+                            await broadcastToRoom(
+                              roomId,
+                              {
+                                type: 'cap-discover',
+                                data: {
+                                  capInfo: cap.capinfo
+                                }
+                              },
+                              connectionId,
+                              domainName,
+                              stage,
+                              usersInRoom
+                            );
+                        }
                     }
                 }
             }
