@@ -69,10 +69,10 @@ const options = {
 }
 
 const bomb_datas = [
-  {rad: 30000,   text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
-  {rad: 100000,  text:"5 megaton",  base_cnt: 10,  bonus_per: 500000,   zoom: 6 },
-  {rad: 500000,  text:"10 megaton", base_cnt: 5,   bonus_per: 1000000,  zoom: 5 },
-  {rad: 1000000, text:"50 megaton", base_cnt: 1,   bonus_per: 5000000,  zoom: 5 }
+  {rad: 150000,  text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
+  {rad: 300000,  text:"5 megaton",  base_cnt: 10,  bonus_per: 500000,   zoom: 6 },
+  {rad: 700000,  text:"10 megaton", base_cnt: 5,   bonus_per: 1000000,  zoom: 5 },
+  {rad: 1200000, text:"50 megaton", base_cnt: 1,   bonus_per: 5000000,  zoom: 5 }
 ];
 
 export default function App() {
