@@ -346,6 +346,10 @@ export default function App() {
       // Found city
       if(city_info)
       {
+        // Check if the city is a capital
+        const isCapital = checkIfCityIsCapital(city_info);
+        city_info.isCapital = isCapital; // Add isCapital property
+
         SetSelectedCity(city_info)
         SetShowSelCityMarker(true);
         SetShowSelCityInfo(true);

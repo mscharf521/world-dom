@@ -3,6 +3,7 @@ import { Button } from '@mui/material'
 import './CityInfo.css'
 import './font.css'
 import earthflag from './assets/earthflag.png'
+import CapSymbol from './CapSymbol'
 
 //let dummycity = {
 //  name: "st louis",
@@ -41,6 +42,12 @@ export default function CityInfo(props) {
         
         <img className="flag" src={GetFlagSrc()} onError={OnFlagImgError} alt={"Country Flag"}></img>
         <h2 className="cityname">{ props.cityinfo.name }</h2>
+        
+        {props.cityinfo.isCapital && (
+          <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+            <CapSymbol css_color="Black" capinfo={{ discovered: false }} />
+          </div>
+        )}
       </div>
       <h3 className="countryname">{ props.cityinfo.country }</h3>
 
