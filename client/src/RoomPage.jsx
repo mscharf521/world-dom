@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Button } from '@mui/material'
+import { Button, TextField, Switch, FormControlLabel, FormGroup, Autocomplete, Chip, Paper, Slider } from '@mui/material'
+import { COUNTRIES } from './constants/countries';
 import './RoomPage.css'
 import './font.css'
 
@@ -8,10 +9,8 @@ export default function RoomPage(props) {
 
   const renderUsers = () => {
     return props.users.map(({id, username, room, caps}, index) => (
-      <div key={index}>
-        <h3>
-          {username}
-        </h3>
+      <div key={index} className="RoomPageUser">
+        {username}
       </div>
     ))
   }
@@ -33,10 +32,130 @@ export default function RoomPage(props) {
     }, 2000);
   }
 
+  const handleSettingChange = (setting, value) => {
+    if (!props.isLeader) return;
+
+    // Create a new settings object to avoid direct mutation
+    const newSettings = {
+      ...props.settings,
+      [setting]: value
+    };
+
+    // Notify parent component of settings change
+    if (props.onSettingsChange) {
+      props.onSettingsChange(newSettings);
+    }
+  }
+
+  // Extract country options for Autocomplete
+  const countryOptions = Object.keys(COUNTRIES);
+
   return <div className="RoomPage">
     <h1>Room: {props.room}</h1>
-    <h2>Players</h2>
+    
+    <Paper elevation={3} className="RoomSettings">
+      <h2>Room Settings</h2>
+      <FormGroup>
+        
+        <div className="SettingField">
+          <label>Number of Capitals: {props.settings?.numberOfCapitals}</label>
+          <Slider
+            value={props.settings?.numberOfCapitals}
+            onChange={(e, newValue) => handleSettingChange('numberOfCapitals', newValue)}
+            min={1}
+            max={10}
+            step={1}
+            disabled={!props.isLeader}
+          />
+        </div>
+        
+        <TextField
+          label="Minimum Population"
+          type="number"
+          value={props.settings?.minPopulation}
+          onChange={(e) => handleSettingChange('minPopulation', parseInt(e.target.value))}
+          disabled={!props.isLeader}
+          className="SettingField"
+          size="small"
+        />
+        
+        <FormControlLabel
+          control={
+            <Switch
+              checked={props.settings?.onlyCapitals}
+              onChange={(e) => handleSettingChange('onlyCapitals', e.target.checked)}
+              disabled={!props.isLeader}
+            />
+          }
+          label="Only Country Capitals"
+          className="SettingField"
+        />
 
+        <Autocomplete
+          multiple
+          options={countryOptions}
+          getOptionLabel={(option) => COUNTRIES[option]?.name}
+          value={props.settings?.whitelistCountries}
+          onChange={(e, newValue) => handleSettingChange('whitelistCountries', newValue)}
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => {
+              const { key, ...tagProps } = getTagProps({ index });
+              return (
+                <Chip
+                  key={option + "_whitelist"}
+                  label={COUNTRIES[option]?.name}
+                  {...tagProps}
+                  disabled={!props.isLeader}
+                />
+              );
+            })
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Country Whitelist"
+              placeholder={props.isLeader ? "Add countries..." : ""}
+              size="small"
+            />
+          )}
+          disabled={!props.isLeader}
+          className="SettingField"
+        />
+
+        <Autocomplete
+          multiple
+          options={countryOptions}
+          getOptionLabel={(option) => COUNTRIES[option]?.name}
+          value={props.settings?.blacklistCountries}
+          onChange={(e, newValue) => handleSettingChange('blacklistCountries', newValue)}
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => {
+              const { key, ...tagProps } = getTagProps({ index });
+              return (
+                <Chip
+                  key={option + "_blacklist"}
+                  label={COUNTRIES[option]?.name}
+                  {...tagProps}
+                  disabled={!props.isLeader}
+                />
+              );
+            })
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Country Blacklist"
+              placeholder={props.isLeader ? "Add countries..." : ""}
+              size="small"
+            />
+          )}
+          disabled={!props.isLeader}
+          className="SettingField"
+        />
+      </FormGroup>
+    </Paper>
+
+    <h2>Players</h2>
     { renderUsers() }
 
     {props.isLeader &&

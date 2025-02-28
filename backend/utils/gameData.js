@@ -22,6 +22,10 @@ const createRoom = async (roomId, password) => {
     turnIndex: 0,
     bombs: [],
     num_caps: 3,
+    min_pop: 0,
+    only_caps: false,
+    country_whitelist: [],
+    country_blacklist: [],
     ttl: Date.now() + TTL_12_HOURS
   };
 
@@ -31,6 +35,13 @@ const createRoom = async (roomId, password) => {
   }));
 
   room.id = room.PK.split('#')[1];
+  room.settings = {
+    numberOfCapitals: room.num_caps,
+    minPopulation: room.min_pop,
+    onlyCapitals: room.only_caps,
+    whitelistCountries: room.country_whitelist,
+    blacklistCountries: room.country_blacklist
+  };
   return room;
 };
 
@@ -46,6 +57,13 @@ const getRoomData = async (roomId) => {
   if(room.Item)
   {
     room.Item.id = room.Item.PK.split('#')[1];
+    room.Item.settings = {
+      numberOfCapitals: room.Item.num_caps,
+      minPopulation: room.Item.min_pop,
+      onlyCapitals: room.Item.only_caps,
+      whitelistCountries: room.Item.country_whitelist,
+      blacklistCountries: room.Item.country_blacklist
+    };
   }
   return room.Item;
 };  
@@ -82,6 +100,22 @@ const setRoomTurnOrder = async (roomId, turnOrder) => {
     }
   }));
 };  
+
+const setRoomSettings = async (roomId, settings) => {
+  console.log("Setting room settings in DB:", settings);
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: { PK: `ROOM#${roomId}`, SK: 'METADATA' },
+    UpdateExpression: 'set num_caps = :num_caps, min_pop = :min_pop, only_caps = :only_caps, country_whitelist = :country_whitelist, country_blacklist = :country_blacklist',
+    ExpressionAttributeValues: {
+      ':num_caps': settings.numberOfCapitals,
+      ':min_pop': settings.minPopulation,
+      ':only_caps': settings.onlyCapitals,
+      ':country_whitelist': settings.whitelistCountries,
+      ':country_blacklist': settings.blacklistCountries
+    }
+  }));
+};
 
 const incRoomTurnIndex = async (roomId) => {
   const room = await getRoomData(roomId);
@@ -221,5 +255,6 @@ module.exports = {
   incRoomTurnIndex,
   removeIDFromTurnOrder,
   removeUserFromRoom,
-  removeRoom
+  removeRoom,
+  setRoomSettings
 }; 

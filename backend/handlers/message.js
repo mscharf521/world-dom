@@ -9,7 +9,8 @@ const {
   getUserByConnection,
   setUserCapitals,
   discoverUserCap,
-  incRoomTurnIndex
+  incRoomTurnIndex,
+  setRoomSettings
 } = require('../utils/gameData');
 const { checkWinCondition } = require('../utils/wincon');
 const { broadcastToRoom, sendToConnection } = require('../utils/send');
@@ -85,7 +86,7 @@ exports.handler = async (event) => {
           connectionId, 
           { 
             type: 'joined-room-result',
-            data: {success, leader}
+            data: {success, leader, settings: room_data.settings}
           }, 
           domainName, 
           stage
@@ -281,6 +282,21 @@ exports.handler = async (event) => {
       case 'leave-room': {
         await leaveRoom(connectionId, domainName, stage);
         return { statusCode: 200, body: 'Left room' };
+      }
+
+      case 'settings-change': {
+        const { room: roomId, settings } = data;
+        await setRoomSettings(roomId, settings);
+        
+        await broadcastToRoom(
+          roomId,
+          { type: 'settings-change-server', data: { settings } },
+          connectionId,
+          domainName,
+          stage
+        );
+
+        return { statusCode: 200, body: 'Settings changed' };
       }
 
       default:

@@ -7,6 +7,7 @@ import {
   Circle,
   Marker
 } from "@react-google-maps/api"
+import Fuse from 'fuse.js';
 
 import CityInfo from "./CityInfo";
 import Chat from './Chat'
@@ -22,6 +23,7 @@ import './font.css'
 
 import { cap_path } from "./CapSymbol"
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
+import { COUNTRIES } from './constants/countries';
 
 // WebSocket connection
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
@@ -85,6 +87,8 @@ export default function App() {
   const [ResultPageData, SetResultPageData] = useState({show:false, result:null});
   //const [ResultPageData, SetResultPageData] = useState({show:true, result:WIN});
   const [showSelCapBtn, SetShowSelCapBtn] = useState(false);
+  const [selCapBtnText, SetSelCapBtnText] = useState("Select Capital");
+  const [selCapBtnDisabled, SetSelCapBtnDisabled] = useState(false);
   const [showSelCityInfo, SetShowSelCityInfo] = useState(false);
   const [showSelCityMarker, SetShowSelCityMarker] = useState(false);
   const [showLaunchBtn, SetShowLaunchBtn] = useState(false);
@@ -116,6 +120,13 @@ export default function App() {
   const [chat, SetChat] = useState([]);
   //const [chat, SetChat] = useState([{m_name:"user", m_message:"message", color:"Crimson"},{m_name:"user", m_message:"message", color:"Crimson"},{m_name:"user", m_message:"message", color:"Crimson"}]);
   const [message, SetMessage] = useState("");
+
+  const [settings, SetSettings] = useState({
+    minPopulation: 0,
+    onlyCapitals: false,
+    whitelistCountries: [],
+    blacklistCountries: []
+  });
 
   function SetStartState()
   {
@@ -152,8 +163,9 @@ export default function App() {
     mapRef.current.setZoom(start_zoom)
   }
 
-  // This reference to users is necessary so that the current list of users can be used in the second use effect which sets up 
-  // the socket listeners. Since only on set of socket listeners at the start, they do not have an up to date version of the users
+  const settingsRef = useRef(settings);
+  useEffect(() => {settingsRef.current = settings})
+  
   const usersRef = useRef(users);
   useEffect(() => {usersRef.current = users})
 
@@ -205,6 +217,7 @@ export default function App() {
             SetShowRoomPage(true);
             SetShowStartPage(false);
             SetIsLeader(payload.data.leader);
+            SetSettings((current) => ({...current, ...payload.data.settings}));
           } else {
             console.log("failed to join room");
           }
@@ -276,6 +289,10 @@ export default function App() {
               SetResultPageData({show:true, result:LOSE});
             }
             break;
+
+        case 'settings-change-server':
+            SetSettings((current) => ({...current, ...payload.data.settings}));
+            break;
       
         default:
             console.log("Unknown message type:", payload.type);
@@ -296,6 +313,22 @@ export default function App() {
   const onMapLoad = React.useCallback((map) => {
     mapRef.current = map;
   }, []);
+
+  const checkIfCityIsCapital = (city_info) => {
+    const fuse = new Fuse(
+      [COUNTRIES[city_info.country_code].capital], 
+      { threshold: 0.3, includeScore: true, isCaseSensitive: false, ignoreDiacritics: true }
+    );
+    const result = fuse.search(city_info.name);
+    return result.length > 0;
+  }
+
+  const checkIfFailsCityRequirements = (city_info, currentSettings) => {
+    return (currentSettings.minPopulation && city_info.pop < currentSettings.minPopulation) ||
+           (currentSettings.whitelistCountries.length > 0 && !currentSettings.whitelistCountries.includes(city_info.country_code)) ||
+           (currentSettings.blacklistCountries.length > 0 && currentSettings.blacklistCountries.includes(city_info.country_code)) ||
+           (currentSettings.onlyCapitals && !checkIfCityIsCapital(city_info));
+  }
 
   const onMapClick = useCallback((e) => {
     if(!ctrlRef.current)
@@ -327,7 +360,13 @@ export default function App() {
           if(city_already_sel === false)
           {
             SetShowSelCapBtn(true);
-
+            if (checkIfFailsCityRequirements(city_info, settingsRef.current)) {
+                SetSelCapBtnText("Does not meet requirements");
+                SetSelCapBtnDisabled(true);
+            } else {
+                SetSelCapBtnText("Select Capital");
+                SetSelCapBtnDisabled(false);
+            }
           }
         }
         else if(game_state === GAME)
@@ -513,11 +552,23 @@ export default function App() {
     })
   }
 
+  const handleSettingsChange = (newSettings) => {
+    sendWSMessage('settings-change', {room, settings:newSettings});
+  }
+
   return <div>
     {showStartPage &&
     <StartingPage name={name} SetName={SetName} room={room} SetRoom={SetRoom} OnSubmit={onJoinRoom}/>}
     {showRoomPage && 
-    <RoomPage room={room} users={users} isLeader={isLeader} OnStartGame={onStartGame} OnLeaveRoom={onLeaveRoom}/>}
+    <RoomPage 
+      room={room} 
+      users={users} 
+      isLeader={isLeader} 
+      OnStartGame={onStartGame} 
+      OnLeaveRoom={onLeaveRoom}
+      settings={settings}
+      onSettingsChange={handleSettingsChange}
+    />}
 
     {game_state === PREGAME &&
     <div className="MapCover"></div>}
@@ -622,8 +673,10 @@ export default function App() {
       className="sel-cap-btn"
       variant="contained"
       color="primary"
-      onClick={onSelCap}>
-        Select Capital
+      onClick={onSelCap}
+      disabled={selCapBtnDisabled}
+      >
+        {selCapBtnText}
     </Button></div>}
 
 

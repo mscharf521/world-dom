@@ -12,3 +12,53 @@
     flex-direction: column;
     gap: 20px;
 }
+
+.RoomSettings {
+  padding: 1.5rem;
+  margin: 1rem 0;
+  max-width: 600px;
+  width: 100%;
+}
+
+.RoomSettings h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.SettingField {
+  margin-bottom: 1rem !important;
+  width: 100%;
+}
+
+.RoomPageUser {
+  font-size: 1.2rem;
+  height: 1.5rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 600px) {
+  .RoomSettings {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  .SettingField {
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Make chips wrap nicely on mobile */
+  .MuiChip-root {
+    margin: 2px !important;
+  }
+}
+
+/* Center the room settings container */
+.RoomPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+}
