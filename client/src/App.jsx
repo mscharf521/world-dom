@@ -66,6 +66,7 @@ const options = {
     },
   },
   gestureHandling: 'greedy',
+  scaleControl: true,
 }
 
 const bomb_datas = [
@@ -319,7 +320,7 @@ export default function App() {
 
   const checkIfCityIsCapital = (city_info) => {
     const fuse = new Fuse(
-      [COUNTRIES[city_info.country_code].capital], 
+      [COUNTRIES[city_info.country_code]?.capital ?? ""], 
       { threshold: 0.3, includeScore: true, isCaseSensitive: false, ignoreDiacritics: true }
     );
     const result = fuse.search(city_info.name);
@@ -708,10 +709,11 @@ export default function App() {
     {bomb_datas.map((bomb_data, index) => (    // Bomb buttons
       <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) === index) ? " active-bomb-btn" : "")}>
         <Button
-          className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bomb")}
+          className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bombs")}
           variant="contained"
           onClick={() => onBombBtnPress(index)}
           style={{justifyContent: "flex-end"}}
+          disabled={bombCount[index] <= 0 && index !== 0}
         >
             <div className="game-btn-label">{" " + bomb_data.text}</div>
         </Button>
