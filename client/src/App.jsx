@@ -556,6 +556,13 @@ export default function App() {
     sendWSMessage('settings-change', {room, settings:newSettings});
   }
 
+  const scrollToCapital = (lat, lng) => {
+    if (mapRef.current) {
+      mapRef.current.panTo({ lat, lng });
+      mapRef.current.setZoom(8); // Adjust zoom level as needed
+    }
+  };
+
   return <div>
     {showStartPage &&
     <StartingPage name={name} SetName={SetName} room={room} SetRoom={SetRoom} OnSubmit={onJoinRoom}/>}
@@ -722,7 +729,8 @@ export default function App() {
           curTurnActive={curTurnID === user.connectionId} 
           color_class={GetColorBackgroundClass(GetPlayerColorIdx(user.connectionId))} 
           css_color={GetCSSColor(GetPlayerColorIdx(user.connectionId))}
-          />
+          onCapClick={user.connectionId === my_connection_id ? scrollToCapital : null}
+        />
       ))}
     </div>}
     
