@@ -293,6 +293,10 @@ export default function App() {
         case 'settings-change-server':
             SetSettings((current) => ({...current, ...payload.data.settings}));
             break;
+
+        case 'cap-discover':
+            addAlert(`${payload.data.capInfo.name} was destroyed!`, () => scrollToCapital(payload.data.capInfo.lat, payload.data.capInfo.lng), 5000)
+            break;
       
         default:
             console.log("Unknown message type:", payload.type);

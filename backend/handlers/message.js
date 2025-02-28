@@ -231,6 +231,21 @@ exports.handler = async (event) => {
                     {
                         await discoverUserCap(roomId, user.connectionId, cap_index);
                         cap_hit = true;
+
+                        // Broadcast cap-discover message to the room
+                        await broadcastToRoom(
+                          roomId,
+                          {
+                            type: 'cap-discover',
+                            data: {
+                              capInfo: cap.capinfo
+                            }
+                          },
+                          connectionId,
+                          domainName,
+                          stage,
+                          usersInRoom
+                        );
                     }
                 }
             }
