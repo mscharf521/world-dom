@@ -173,7 +173,9 @@ export default function RoomPage(props) {
     </Paper>
 
     <h2>Players</h2>
-    { renderUsers() }
+    <div className="PlayerList">
+      {renderUsers()}
+    </div>
 
     {props.isLeader &&
     <form className="RoomPageForm" onSubmit={props.OnStartGame}>
