@@ -8,6 +8,7 @@ import {
   Marker
 } from "@react-google-maps/api"
 import Fuse from 'fuse.js';
+import { debounce } from 'lodash';
 
 import CityInfo from "./CityInfo";
 import Chat from './Chat'
@@ -69,13 +70,6 @@ const options = {
   scaleControl: true,
 }
 
-const bomb_datas = [
-  {rad: 150000,  text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
-  {rad: 300000,  text:"5 megaton",  base_cnt: 10,  bonus_per: 500000,   zoom: 6 },
-  {rad: 700000,  text:"10 megaton", base_cnt: 5,   bonus_per: 1000000,  zoom: 5 },
-  {rad: 1200000, text:"50 megaton", base_cnt: 1,   bonus_per: 5000000,  zoom: 5 }
-];
-
 export default function App() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
@@ -125,7 +119,8 @@ export default function App() {
     minPopulation: 0,
     onlyCapitals: false,
     whitelistCountries: [],
-    blacklistCountries: []
+    blacklistCountries: [],
+    bombScale: 100 // New bomb scale setting
   });
 
   function SetStartState()
@@ -178,6 +173,14 @@ export default function App() {
       window.scrollTo(0, 0)
     }
   })
+
+  
+  const bomb_datas = [
+    {rad: 150000 * settings.bombScale / 100,  text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
+    {rad: 300000 * settings.bombScale / 100,  text:"5 megaton",  base_cnt: 10,  bonus_per: 500000,   zoom: 6 },
+    {rad: 700000 * settings.bombScale / 100,  text:"10 megaton", base_cnt: 5,   bonus_per: 1000000,  zoom: 5 },
+    {rad: 1200000 * settings.bombScale / 100, text:"50 megaton", base_cnt: 1,   bonus_per: 5000000,  zoom: 5 }
+  ];
 
   useEffect(() => {
     ws.onopen = () => {
@@ -508,7 +511,7 @@ export default function App() {
     {
       is_my_turn = false;
       let new_bombCount = [...bombCount];
-      new_bombCount[GetIndexFromRadius(preBomb.radius)] -= 1;
+      new_bombCount[GetIndexFromRadius(preBomb.radius, bomb_datas)] -= 1;
       SetBombCount(new_bombCount);
       SetPreBomb(null);
       SetShowLaunchBtn(false);
@@ -555,9 +558,9 @@ export default function App() {
     })
   }
 
-  const handleSettingsChange = (newSettings) => {
+  const handleSettingsChange = debounce((newSettings) => {
     sendWSMessage('settings-change', {room, settings:newSettings});
-  }
+  }, 100);
 
   const scrollToCapital = (lat, lng) => {
     if (mapRef.current) {
@@ -707,7 +710,7 @@ export default function App() {
     </Button></div>}
 
     {bomb_datas.map((bomb_data, index) => (    // Bomb buttons
-      <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius) === index) ? " active-bomb-btn" : "")}>
+      <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius, bomb_datas) === index) ? " active-bomb-btn" : "")}>
         <Button
           className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bombs")}
           variant="contained"
@@ -797,7 +800,7 @@ function GetSearchRadiusFromZoom( zoom )
   return rad;
 }
 
-function GetIndexFromRadius(radius)
+function GetIndexFromRadius(radius, bomb_datas)
 {
   for(var i = 0; i < bomb_datas.length; i += 1)
   {

@@ -152,6 +152,23 @@ export default function RoomPage(props) {
           disabled={!props.isLeader}
           className="SettingField"
         />
+
+        <div className="SettingField">
+          <label>Bomb Scale: {props.settings.bombScale}%</label>
+          <Slider
+            value={props.settings.bombScale}
+            onChange={(e, newValue) => handleSettingChange('bombScale', newValue)}
+            min={50}
+            max={200}
+            valueLabelDisplay="auto"
+            step={10}
+            marks={[
+              { value: 50, label: '50%' },
+              { value: 100, label: '100%' },
+              { value: 200, label: '200%' }
+            ]}
+          />
+        </div>
       </FormGroup>
     </Paper>
 

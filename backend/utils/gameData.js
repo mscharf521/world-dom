@@ -102,17 +102,17 @@ const setRoomTurnOrder = async (roomId, turnOrder) => {
 };  
 
 const setRoomSettings = async (roomId, settings) => {
-  console.log("Setting room settings in DB:", settings);
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${roomId}`, SK: 'METADATA' },
-    UpdateExpression: 'set num_caps = :num_caps, min_pop = :min_pop, only_caps = :only_caps, country_whitelist = :country_whitelist, country_blacklist = :country_blacklist',
+    UpdateExpression: 'set num_caps = :num_caps, min_pop = :min_pop, only_caps = :only_caps, country_whitelist = :country_whitelist, country_blacklist = :country_blacklist, bomb_scale = :bomb_scale',
     ExpressionAttributeValues: {
       ':num_caps': settings.numberOfCapitals,
       ':min_pop': settings.minPopulation,
       ':only_caps': settings.onlyCapitals,
       ':country_whitelist': settings.whitelistCountries,
-      ':country_blacklist': settings.blacklistCountries
+      ':country_blacklist': settings.blacklistCountries,
+      ':bomb_scale': settings.bombScale
     }
   }));
 };
