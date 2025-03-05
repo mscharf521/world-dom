@@ -56,9 +56,8 @@ export default function RoomPage(props) {
     <Paper elevation={3} className="RoomSettings">
       <h2>Room Settings</h2>
       <FormGroup>
-        
         <div className="SettingField">
-          <label>Number of Capitals: {props.settings?.numberOfCapitals}</label>
+          <label>Number of Cities: {props.settings?.numberOfCapitals}</label>
           <Slider
             value={props.settings?.numberOfCapitals}
             onChange={(e, newValue) => handleSettingChange('numberOfCapitals', newValue)}
