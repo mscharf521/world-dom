@@ -3,6 +3,7 @@ import { Button } from '@mui/material'
 import RoomSettingsPopup from "./RoomSettingsPopup";
 import Chat from "./Chat";
 import './MultiUseInfo.css'
+import Notes from "./Notes";
 
 const ANIMATION_DURATION_MS = 250;
 
@@ -10,6 +11,7 @@ export default function MultiUseInfo(props) {
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [hideChat, SetHideChat] = useState(true);
   const [hideRoomSettings, setHideRoomSettings] = useState(true);
+  const [hideNotes, setHideNotes] = useState(true);
 
   useEffect(() => {
     if (props.chat.length > 0 && hideChat) {
@@ -19,7 +21,8 @@ export default function MultiUseInfo(props) {
 
   const isAnythingElseOpen = (window) => {
     return window != "Chat" && !hideChat 
-    || window != "Settings" && !hideRoomSettings;
+    || window != "Settings" && !hideRoomSettings
+    || window != "Notes" && !hideNotes;
   };
 
   const toggle = (window) => {
@@ -31,6 +34,9 @@ export default function MultiUseInfo(props) {
         case "Settings":
           setHideRoomSettings(!hideRoomSettings);
           break;
+        case "Notes":
+          setHideNotes(!hideNotes);
+          break;
       }
     }, isAnythingElseOpen(window) ? ANIMATION_DURATION_MS : 0);
 
@@ -39,6 +45,9 @@ export default function MultiUseInfo(props) {
     }
     if (window != "Settings") {
       setHideRoomSettings(true);
+    }
+    if (window != "Notes") {
+      setHideNotes(true);
     }
   };
 
@@ -50,6 +59,11 @@ export default function MultiUseInfo(props) {
   const handleRoomSettingsButtonClick = () => {
     SetHideChat(true);
     toggle("Settings");
+  };
+
+  const handleNotesButtonClick = () => {
+    SetHideChat(true);
+    toggle("Notes");
   };
 
   return <div className="MultiUseInfoWrapper">
@@ -72,6 +86,13 @@ export default function MultiUseInfo(props) {
     >
       Settings
     </Button>
+    <Button 
+      variant="contained"
+      onClick={handleNotesButtonClick}
+      style={{ position: 'relative', backgroundColor: hideNotes ? "#435151" : "#634146", marginRight: '10px' }}
+    >
+      Notes
+    </Button>
     <Chat 
       chat={props.chat} 
       hide={hideChat} 
@@ -81,5 +102,6 @@ export default function MultiUseInfo(props) {
       setUnreadMessages={setUnreadMessages}
     />
     <RoomSettingsPopup hide={hideRoomSettings} settings={props.settings} />
+    <Notes hide={hideNotes} />
   </div>
 }
