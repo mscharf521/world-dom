@@ -229,4 +229,5 @@ export const COUNTRIES = {
   "UM": { name: "United States Minor Outlying Islands", capital: "N/A" },
   "VG": { name: "British Virgin Islands", capital: "Road Town" },
   "VI": { name: "U.S. Virgin Islands", capital: "Charlotte Amalie" },
+  "KZ": { name: "Kazakhstan", capital: "Astana" },
 }; 

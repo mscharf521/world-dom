@@ -25,6 +25,7 @@ import './font.css'
 import { cap_path } from "./CapSymbol"
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 import { COUNTRIES } from './constants/countries';
+import MultiUseInfo from "./MultiUseInfo";
 
 // WebSocket connection
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
@@ -80,30 +81,24 @@ export default function App() {
   const [showStartPage, SetShowStartPage] = useState(true);
   const [showRoomPage, SetShowRoomPage] = useState(false);
   const [ResultPageData, SetResultPageData] = useState({show:false, result:null});
-  //const [ResultPageData, SetResultPageData] = useState({show:true, result:WIN});
   const [showSelCapBtn, SetShowSelCapBtn] = useState(false);
-  const [selCapBtnText, SetSelCapBtnText] = useState("Select Capital");
+  const [selCapBtnText, SetSelCapBtnText] = useState("Select City");
   const [selCapBtnDisabled, SetSelCapBtnDisabled] = useState(false);
   const [showSelCityInfo, SetShowSelCityInfo] = useState(false);
   const [showSelCityMarker, SetShowSelCityMarker] = useState(false);
   const [showLaunchBtn, SetShowLaunchBtn] = useState(false);
   const [showBombBtns, SetShowBombBtns] = useState(false);
   const [InfoText, SetInfoText] = useState({show: false, text:""})
-  //const [InfoText, SetInfoText] = useState({show: true, text:"Select 3 Capital Cities"})
 
   const [mapZoom, SetMapZoom] = useState(start_zoom);
 
   const [alerts, SetAlerts] = useState([])
-  //const [alerts, SetAlerts] = useState([{text:"This is an alert!", id:99999}])
   const [name, SetName] = useState("");
   const [room, SetRoom] = useState("");
   const [isLeader, SetIsLeader] = useState(false);
   const [users, SetUsers] = useState([]);
-  //const [users, SetUsers] = useState([{id:"1234-56789", username:"Name", room:"this-Room", caps:[{},{},{}, {}, {}, {}]}]);
   const [bombs, SetBombs] = useState([]);
   const [curTurnID, SetCurTurnID] = useState("");
-  //const [curTurnID, SetCurTurnID] = useState("1234-56789");
-  //const [bombCount, SetBombCount] = useState([]);
   const [bombCount, SetBombCount] = useState([999999,40,15,3]);
 
   const [preBomb, SetPreBomb] = useState(null);
@@ -112,7 +107,6 @@ export default function App() {
   const [CityInfoControl, SetCityInfoControl] = useState(true);
 
   const [chat, SetChat] = useState([]);
-  //const [chat, SetChat] = useState([{username:"user", m_message:"message", color:"Crimson"},{username:"user", m_message:"message", color:"Crimson"},{username:"user", m_message:"message", color:"Crimson"}]);
   const [message, SetMessage] = useState("");
 
   const [settings, SetSettings] = useState({
@@ -120,7 +114,7 @@ export default function App() {
     onlyCapitals: false,
     whitelistCountries: [],
     blacklistCountries: [],
-    bombScale: 100 // New bomb scale setting
+    bombScale: 100
   });
 
   function SetStartState()
@@ -233,7 +227,7 @@ export default function App() {
           cap_count = payload.data.num_caps;
           SetInfoText({
             show: true, 
-            text: `Select ${payload.data.num_caps} Capital Cit${payload.data.num_caps > 1 ? 'ies' : 'y'}`
+            text: `Select ${payload.data.num_caps} More Cit${payload.data.num_caps > 1 ? 'ies' : 'y'}`
           });
           break;
 
@@ -380,10 +374,6 @@ export default function App() {
             }
           }
         }
-        else if(game_state === GAME)
-        {
-
-        }
       }
       else
       {
@@ -499,6 +489,12 @@ export default function App() {
       SetBombCount(new_bombCount);
       cap_buffer = [];
       game_state = WAIT;
+    } else {
+      let rem_cap_count = cap_count - cap_buffer.length;
+      SetInfoText({
+        show: true, 
+        text: `Select ${rem_cap_count} More Cit${rem_cap_count > 1 ? 'ies' : 'y'}`
+      });
     }
     SetShowSelCapBtn(false);
     SetShowSelCityMarker(false);
@@ -589,7 +585,13 @@ export default function App() {
     <AlertSystem alerts={alerts} removeAlert={removeAlert}/>
 
     {game_state !== PREGAME && 
-    <Chat chat={chat} message={message} SetMessage={SetMessage} OnSend={onSendMsg}/>}
+    <MultiUseInfo 
+      chat={chat} 
+      message={message} 
+      SetMessage={SetMessage} 
+      OnSend={onSendMsg}
+      settings={settings}
+    />}
 
     {InfoText.show &&
     <div className="info-text-div"><h1 className="info-text">{InfoText.text}</h1></div>}

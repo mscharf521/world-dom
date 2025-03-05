@@ -167,6 +167,7 @@ export default function RoomPage(props) {
               { value: 100, label: '100%' },
               { value: 200, label: '200%' }
             ]}
+            disabled={!props.isLeader}
           />
         </div>
       </FormGroup>

@@ -1,0 +1,10 @@
+.RoomSettingsPopup {
+    overflow-y: scroll;
+    max-height: 20vh;
+    padding: 10px;
+}
+
+.SettingsItem {
+    font-size: 1.25em;
+    margin-bottom: 8px;
+}

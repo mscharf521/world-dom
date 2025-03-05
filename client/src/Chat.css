@@ -1,36 +1,5 @@
-.HideChatBtn {
-    width: auto;
-    height: 40px;
-    position: absolute;
-    z-index: 100;
-    transition: all 0.25s ease-in-out;
-}
-
-.ChatWrapper {
-    position: absolute;
-    bottom: 0px;
-    left: 0px;
-    z-index: 10;
-}
-
-.Chat {
-    z-index: 10;
-    background-color: azure;
-    width: 30vw;
-    height: auto;
-    border-radius: 10px;
-    transition: all 0.25s ease-in-out;
-    overflow: hidden;
-}
-
-.ChatShow {
-    max-height: 100vh;
+.ChatPopup {
     padding: 5px 0 0 0;
-}
-
-.ChatHide {
-    max-height: 0px;
-    padding: 0 0 0 0;
 }
 
 .render-chat {
@@ -60,28 +29,4 @@
 .send-button {
     width: 40px;
     height: 40px;
-}
-
-.notif {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: red;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    line-height: 1;
-    font-size: 93%;
-}
-
-@media only screen and (max-width: 812px) {
-.Chat {
-  width: 50vw;
-  border-radius: 0 8px 0 0;
-}
 }
