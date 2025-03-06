@@ -35,7 +35,7 @@ async function checkWinCondition(room_data, usersInRoom, domainName, stage)
         if(surv_users.length === 0) // No survivors, TIE
         {
             // Send remaining players tie message
-            for(let userID of room_data.turn_order)
+            for(let userID of room_data.turnOrder)
             {
                 await sendToConnection(userID, {'type': 'tie'}, domainName, stage);
             }
