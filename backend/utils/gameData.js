@@ -26,6 +26,8 @@ const createRoom = async (roomId, password) => {
     only_caps: false,
     country_whitelist: [],
     country_blacklist: [],
+    bomb_scale: 100,
+    num_spies: 0,
     ttl: Date.now() + TTL_12_HOURS
   };
 
@@ -162,6 +164,7 @@ const createUser = async (roomId, connectionId, username) => {
     GSI1SK: roomId,
     username,
     caps: [],
+    spies: [],
     ttl: Date.now() + TTL_12_HOURS
   };
 
@@ -224,7 +227,21 @@ const setUserCapitals = async (roomId, connectionId, capitals) => {
   }));
 };
 
-const discoverUserCap = async (roomId, connectionId, index) => {
+const setUserSpies = async (roomId, connectionId, spies) => {
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: {
+      PK: `ROOM#${roomId}`,
+      SK: `USER#${connectionId}`
+    },
+    UpdateExpression: 'set spies = :spies',
+    ExpressionAttributeValues: {
+      ':spies': spies
+    }
+  }));
+};
+
+const destroyUserCap = async (roomId, connectionId, index) => {
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${roomId}`, SK: `USER#${connectionId}` },
@@ -252,7 +269,7 @@ module.exports = {
   getUsersInRoom,
   getUserByConnection,
   setUserCapitals,
-  discoverUserCap,
+  destroyUserCap,
   incRoomTurnIndex,
   removeIDFromTurnOrder,
   removeUserFromRoom,

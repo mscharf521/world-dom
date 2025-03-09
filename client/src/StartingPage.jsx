@@ -65,7 +65,7 @@ export default function StartingPage(props) {
           <h1 className="HowToPlayTitle" onClick={HowToPlayOnClick}>How to Play</h1>
           <p className="HowToPlayText">The world is in the midst of a nuclear apocalypse. You lead one of the surviving nations which have been forced into 
             hiding by the nuclear threats of rivaling nations. Each nation is confined to their secret capital cities which are selected at the beginning 
-            of the game. During your turn, you will select a position on the map to drop a nuclear bomb in an attempt to discover and destroy enemy capitals. 
+            of the game. During your turn, you will select a position on the map to drop a nuclear bomb in an attempt to discover and destroy enemy cities. 
             The last one standing wins.
             <br/><br/>
             BEWARE: <br/>You can bomb your own capital and multiple players may have the same capital city.

@@ -8,7 +8,7 @@ const {
   getUsersInRoom,
   getUserByConnection,
   setUserCapitals,
-  discoverUserCap,
+  destroyUserCap,
   incRoomTurnIndex,
   setRoomSettings
 } = require('../utils/gameData');
@@ -231,7 +231,7 @@ exports.handler = async (event) => {
                     const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, cap.capinfo.lat, cap.capinfo.lng);
                     if(dst_km <= (bomb.radius / 1000.0) )
                     {
-                        await discoverUserCap(roomId, user.connectionId, cap_index);
+                        await destroyUserCap(roomId, user.connectionId, cap_index);
                         cap_hit = true;
 
                         if (!destroyedCaps.has(cap.capinfo.name)) {  
@@ -240,7 +240,7 @@ exports.handler = async (event) => {
                             await broadcastToRoom(
                               roomId,
                               {
-                                type: 'cap-discover',
+                                type: 'cap-destroy',
                                 data: {
                                   capInfo: cap.capinfo
                                 }

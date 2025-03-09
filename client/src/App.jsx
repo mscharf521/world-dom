@@ -291,7 +291,7 @@ export default function App() {
             SetSettings((current) => ({...current, ...payload.data.settings}));
             break;
 
-        case 'cap-discover':
+        case 'cap-destroy':
             addAlert(`${payload.data.capInfo.name} was destroyed!`, () => scrollToCapital(payload.data.capInfo.lat, payload.data.capInfo.lng), 5000)
             break;
       
