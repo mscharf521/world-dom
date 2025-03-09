@@ -228,9 +228,9 @@ const discoverUserCap = async (roomId, connectionId, index) => {
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${roomId}`, SK: `USER#${connectionId}` },
-    UpdateExpression: 'set caps[' + index + '].discovered = :discovered',
+    UpdateExpression: 'set caps[' + index + '].destroyed = :destroyed',
     ExpressionAttributeValues: {
-      ':discovered': true
+      ':destroyed': true
     }
   }));
 };

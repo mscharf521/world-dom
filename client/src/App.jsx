@@ -464,7 +464,7 @@ export default function App() {
 
   const onSelCap = e => {
     e.preventDefault();
-    cap_buffer.push({capinfo:selectedCity, discovered: false});
+    cap_buffer.push({capinfo:selectedCity, destroyed: false});
     // If we have selected enough caps then send them and switch to waiting
     if(cap_buffer.length === cap_count)
     {
@@ -631,7 +631,7 @@ export default function App() {
 
       {users.map((user) => (
         user.caps.map((cap, index) => (
-          (cap.discovered || user.connectionId === my_connection_id) && cap.capinfo &&
+          (cap.destroyed || user.connectionId === my_connection_id) && cap.capinfo &&
           <Marker
             position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
             icon={{

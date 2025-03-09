@@ -45,7 +45,7 @@ export default function CityInfo(props) {
         
         {props.cityinfo.isCapital && (
           <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-            <CapSymbol css_color="Black" capinfo={{ discovered: false }} />
+            <CapSymbol css_color="Black" capinfo={{ destroyed: false }} />
           </div>
         )}
       </div>

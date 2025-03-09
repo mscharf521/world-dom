@@ -15,7 +15,7 @@ async function checkWinCondition(room_data, usersInRoom, domainName, stage)
                   let has_caps_left = false;
                   for(var cap of user.caps)
                   {
-                      if(!cap.discovered)
+                      if(!cap.destroyed)
                       {
                           has_caps_left = true;
                           break;

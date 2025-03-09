@@ -10,14 +10,14 @@ function getClassName(active)
 }
 
 export default function PlayerCard(props) {
-  const handleCapClick = (capinfo, discovered) => {
-    if (props.onCapClick && canClickCap(discovered)) {
+  const handleCapClick = (capinfo, destroyed) => {
+    if (props.onCapClick && canClickCap(destroyed)) {
       props.onCapClick(capinfo.lat, capinfo.lng);
     }
   };
 
-  const canClickCap = (discovered) => {
-    return props.my_board || discovered;
+  const canClickCap = (destroyed) => {
+    return props.my_board || destroyed;
   }
 
   return <div className={getClassName(props.curTurnActive)}>
@@ -27,8 +27,8 @@ export default function PlayerCard(props) {
         {props.user.caps.map((cap, index) => (
             <div 
               key={index} 
-              onClick={() => handleCapClick(cap.capinfo, cap.discovered)}
-              style={canClickCap(cap.discovered) ? {cursor: 'pointer'} : {cursor: 'default'}}
+              onClick={() => handleCapClick(cap.capinfo, cap.destroyed)}
+              style={canClickCap(cap.destroyed) ? {cursor: 'pointer'} : {cursor: 'default'}}
               className={"cap-div-item"}
             >
               <CapSymbol capinfo={cap} css_color={props.css_color}/>

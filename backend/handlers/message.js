@@ -219,14 +219,14 @@ exports.handler = async (event) => {
         );
         
         let cap_hit = false;
-        const discoveredCaps = new Set();
+        const destroyedCaps = new Set();
 
         for(var user of usersInRoom)
         {
             for(var cap_index in user.caps)
             {
                 const cap = user.caps[cap_index]; 
-                if(!cap.discovered)
+                if(!cap.destroyed)
                 {
                     const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, cap.capinfo.lat, cap.capinfo.lng);
                     if(dst_km <= (bomb.radius / 1000.0) )
@@ -234,8 +234,8 @@ exports.handler = async (event) => {
                         await discoverUserCap(roomId, user.connectionId, cap_index);
                         cap_hit = true;
 
-                        if (!discoveredCaps.has(cap.capinfo.name)) {  
-                            discoveredCaps.add(cap.capinfo.name);
+                        if (!destroyedCaps.has(cap.capinfo.name)) {  
+                            destroyedCaps.add(cap.capinfo.name);
 
                             await broadcastToRoom(
                               roomId,

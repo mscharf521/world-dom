@@ -5,7 +5,7 @@ export default function CapSymbol(props) {
 
 	function GetColor()
 	{
-		if(!props.capinfo.discovered)
+		if(!props.capinfo.destroyed)
 		{
 			return props.css_color
 		}
