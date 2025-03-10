@@ -5,13 +5,12 @@ import {
   GoogleMap,
   useLoadScript,
   Circle,
-  Marker
+  Marker,
 } from "@react-google-maps/api"
 import Fuse from 'fuse.js';
-import { debounce } from 'lodash';
+import { debounce, set } from 'lodash';
 
 import CityInfo from "./CityInfo";
-import Chat from './Chat'
 import StartingPage from './StartingPage'
 import RoomPage from './RoomPage'
 import ResultPage, { WIN, TIE, LOSE } from './ResultPage'
@@ -23,12 +22,15 @@ import './App.css'
 import './font.css'
 
 import { cap_path } from "./CapSymbol"
+import { spy_path } from "./SpySymbol";
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 import { COUNTRIES } from './constants/countries';
 import MultiUseInfo from "./MultiUseInfo";
 
+import { getDistanceFromLatLng } from "./dst";
+
 // WebSocket connection
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+const WS_URL = process.env.NODE_ENV == "production" ? import.meta.env.VITE_WS_URL : 'ws://localhost:3001';
 const ws = new WebSocket(WS_URL);
 
 let my_connection_id = null;
@@ -36,12 +38,19 @@ let my_connection_id = null;
 // Game states
 const PREGAME = 0;
 const CAPSEL = 1;
-const WAIT = 2;
-const GAME = 3;
+const SPYSEL = 2;
+const WAIT = 3;
+const GAME = 4;
+
+// Turn states
+const SPY = 0;
+const BOMB = 1;
 
 let game_state = PREGAME;
+let turn_state = BOMB;
 let cap_count = 0;
 let cap_buffer = [];
+let spy_buffer = [];
 let is_my_turn = false;
 let player_colors = [];
 
@@ -81,14 +90,16 @@ export default function App() {
   const [showStartPage, SetShowStartPage] = useState(true);
   const [showRoomPage, SetShowRoomPage] = useState(false);
   const [ResultPageData, SetResultPageData] = useState({show:false, result:null});
-  const [showSelCapBtn, SetShowSelCapBtn] = useState(false);
-  const [selCapBtnText, SetSelCapBtnText] = useState("Select City");
-  const [selCapBtnDisabled, SetSelCapBtnDisabled] = useState(false);
+  const [showSelBtn, SetShowSelBtn] = useState(false);
+  const [selBtnText, SetSelBtnText] = useState("");
+  const [selBtnDisabled, SetSelBtnDisabled] = useState(false);
   const [showSelCityInfo, SetShowSelCityInfo] = useState(false);
   const [showSelCityMarker, SetShowSelCityMarker] = useState(false);
+  const [showSelSpyMarker, SetShowSelSpyMarker] = useState(false);
   const [showLaunchBtn, SetShowLaunchBtn] = useState(false);
   const [showBombBtns, SetShowBombBtns] = useState(false);
   const [InfoText, SetInfoText] = useState({show: false, text:""})
+  const [showSpyBtns, SetShowSpyBtns] = useState(false);
 
   const [mapZoom, SetMapZoom] = useState(start_zoom);
 
@@ -101,8 +112,12 @@ export default function App() {
   const [curTurnID, SetCurTurnID] = useState("");
   const [bombCount, SetBombCount] = useState([999999,40,15,3]);
 
+  const [activeSpyIdx, SetActiveSpyIdx] = useState(-1);
+  const [activeSpyInfo, SetActiveSpyInfo] = useState(null);
+
   const [preBomb, SetPreBomb] = useState(null);
   const [selectedCity, SetSelectedCity] = useState({});
+  const [selectedSpy, SetSelectedSpy] = useState({});
 
   const [CityInfoControl, SetCityInfoControl] = useState(true);
 
@@ -114,7 +129,9 @@ export default function App() {
     onlyCapitals: false,
     whitelistCountries: [],
     blacklistCountries: [],
-    bombScale: 100
+    bombScale: 100,
+    numberOfCapitals: 1,//3,
+    numberOfSpies: 1//0
   });
 
   function SetStartState()
@@ -122,17 +139,19 @@ export default function App() {
     game_state = PREGAME; 
     cap_count = 0;
     cap_buffer = [];
+    spy_buffer = [];
     is_my_turn = false;
     player_colors = [];
 
     SetShowStartPage(true);
     SetShowRoomPage(false);
     SetResultPageData({show: false, result: null})
-    SetShowSelCapBtn(false);
+    SetShowSelBtn(false);
     SetShowSelCityInfo(false);
     SetShowSelCityMarker(false);
     SetShowLaunchBtn(false);
     SetShowBombBtns(false);
+    SetShowSpyBtns(false);
 
     SetMapZoom(start_zoom);
 
@@ -168,6 +187,9 @@ export default function App() {
     }
   })
 
+  const spy_search_radius = 200000;
+  const spy_move_scan_max_radius = 300000;
+  const spy_move_max_radius = 1500000;
   
   const bomb_datas = [
     {rad: 150000 * settings.bombScale / 100,  text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
@@ -232,6 +254,7 @@ export default function App() {
           break;
 
         case 'room-users':
+          console.log("room-users", payload.data.users);
           SetUsers(payload.data.users);
           break;
 
@@ -249,7 +272,9 @@ export default function App() {
           break;
 
         case 'next-turn':
-            if(game_state === CAPSEL || game_state === WAIT)
+            SetUsers(payload.data.users);
+
+            if(game_state === CAPSEL || game_state === WAIT || game_state === SPYSEL)
             {
               game_state = GAME;
               SetInfoText({show: false, text:""})
@@ -261,8 +286,26 @@ export default function App() {
             {
               addAlert("It's your turn", null, 3000)
               is_my_turn = true;
-              SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-              SetShowBombBtns(true);
+
+              if(settingsRef.current.numberOfSpies > 0) {
+                turn_state = SPY;
+                const my_user = payload.data.users.find(u => u.connectionId === my_connection_id);
+                console.log(my_user);
+                const first_nondestroyed_spy_idx = my_user.spies.findIndex(spy => !spy.destroyed);
+                if(first_nondestroyed_spy_idx !== -1) {
+                  SetActiveSpyIdx(first_nondestroyed_spy_idx);
+                  SetActiveSpyInfo(my_user.spies[first_nondestroyed_spy_idx].spyinfo);
+                  SetShowSpyBtns(true);
+                } else {
+                  turn_state = BOMB;
+                  SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+                  SetShowBombBtns(true);
+                }
+              } else {
+                turn_state = BOMB;
+                SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+                SetShowBombBtns(true);
+              }
             }
             break;
       
@@ -293,6 +336,14 @@ export default function App() {
 
         case 'cap-destroy':
             addAlert(`${payload.data.capInfo.name} was destroyed!`, () => scrollToCapital(payload.data.capInfo.lat, payload.data.capInfo.lng), 5000)
+            break;
+
+        case 'spy-destroy':
+            addAlert(`A Spy was destroyed!`, () => scrollToCapital(payload.data.spyinfo.lat, payload.data.spyinfo.lng), 5000)
+            break;
+
+        case 'spy-scan':
+            addAlert(`${payload.data.message}`, () => scrollToCapital(payload.data.lat, payload.data.lng), 5000)
             break;
       
         default:
@@ -331,65 +382,93 @@ export default function App() {
            (currentSettings.onlyCapitals && !checkIfCityIsCapital(city_info));
   }
 
+  const spyCanMoveScan = (activeSpy, movedSpy) => {
+    const distance = getDistanceFromLatLng(activeSpy.lat, activeSpy.lng, movedSpy.lat, movedSpy.lng);
+    return distance <= spy_move_scan_max_radius / 1000;
+  };
+
+  const spyCanMove = (activeSpy, movedSpy) => {
+    const distance = getDistanceFromLatLng(activeSpy.lat, activeSpy.lng, movedSpy.lat, movedSpy.lng);
+    return distance <= spy_move_max_radius;
+  };
+
   const onMapClick = useCallback((e) => {
     if(!ctrlRef.current)
     {
-      onBombPosSelect(e);
+      secondaryMapClick(e);
       return;
     }
-    let search_radius = GetSearchRadiusFromZoom(mapRef.current.zoom)
-    GetCityInfoFromLatLng(e.latLng.lat(), e.latLng.lng(), search_radius).then(city_info => {
-
-      // Found city
-      if(city_info)
-      {
-        // Check if the city is a capital
-        const isCapital = checkIfCityIsCapital(city_info);
-        city_info.isCapital = isCapital; // Add isCapital property
-
-        SetSelectedCity(city_info)
-        SetShowSelCityMarker(true);
-        SetShowSelCityInfo(true);
-
-        if(game_state === CAPSEL)
+    if(game_state === CAPSEL || game_state === GAME || game_state === WAIT ) {
+      
+      let search_radius = GetSearchRadiusFromZoom(mapRef.current.zoom);
+      GetCityInfoFromLatLng(e.latLng.lat(), e.latLng.lng(), search_radius).then(city_info => {
+  
+        // Found city
+        if(city_info)
         {
-          let city_already_sel = false;
-          for(var cap of cap_buffer)
+          // Check if the city is a capital
+          const isCapital = checkIfCityIsCapital(city_info);
+          city_info.isCapital = isCapital; // Add isCapital property
+  
+          SetSelectedCity(city_info)
+          SetShowSelCityMarker(true);
+          SetShowSelCityInfo(true);
+  
+          if(game_state === CAPSEL)
           {
-            if(cap && cap.capinfo.lat && cap.capinfo.lat === city_info.lat && cap.capinfo.lng === city_info.lng)
+            let city_already_sel = false;
+            for(var cap of cap_buffer)
             {
-              city_already_sel = true;
-              break;
+              if(cap && cap.capinfo.lat && cap.capinfo.lat === city_info.lat && cap.capinfo.lng === city_info.lng)
+              {
+                city_already_sel = true;
+                break;
+              }
             }
-          }
-          if(city_already_sel === false)
-          {
-            SetShowSelCapBtn(true);
-            if (checkIfFailsCityRequirements(city_info, settingsRef.current)) {
-                SetSelCapBtnText("Does not meet requirements");
-                SetSelCapBtnDisabled(true);
-            } else {
-                SetSelCapBtnText("Select Capital");
-                SetSelCapBtnDisabled(false);
+            if(city_already_sel === false)
+            {
+              SetShowSelBtn(true);
+              if (checkIfFailsCityRequirements(city_info, settingsRef.current)) {
+                  SetSelBtnText("Does not meet requirements");
+                  SetSelBtnDisabled(true);
+              } else {
+                  SetSelBtnText("Select Capital");
+                  SetSelBtnDisabled(false);
+              }
             }
           }
         }
-      }
-      else
-      {
-        SetSelectedCity(null)
-        SetShowSelCityMarker(false);
-        SetShowSelCityInfo(false);
-        SetShowSelCapBtn(false);
-      }
+        else
+        {
+          SetSelectedCity(null)
+          SetShowSelCityMarker(false);
+          SetShowSelCityInfo(false);
+          SetShowSelBtn(false);
+        }
+  
+      });
+    } else if(game_state === SPYSEL) {
+      SetSelectedSpy({lat:e.latLng.lat(), lng:e.latLng.lng()})
+      SetShowSelSpyMarker(true);
 
-    })
+      SetShowSelBtn(true);
+      SetSelBtnText("Select Spy Location");
+      SetSelBtnDisabled(false);
+    }
     
   }, []);
 
   const onMapRightClick = useCallback((e) => {
-    onBombPosSelect(e);
+    secondaryMapClick(e);
   }, []);
+
+  const secondaryMapClick = (e) => {
+    if(turn_state === SPY){
+      onSpyPosSelect(e);
+    } else if(turn_state === BOMB) {
+      onBombPosSelect(e);
+    }
+  }
 
   const onBombPosSelect = (e) => {
     if(game_state === GAME && is_my_turn)
@@ -397,6 +476,14 @@ export default function App() {
       SetPreBomb((current) => {
         return {center:{lat:e.latLng.lat(), lng:e.latLng.lng()}, radius:current.radius}})
       SetShowLaunchBtn(true);
+    }
+  }
+
+  const onSpyPosSelect = (e) => {
+    if(game_state === GAME && is_my_turn)
+    {
+      SetSelectedSpy({lat:e.latLng.lat(), lng:e.latLng.lng()})
+      SetShowSelSpyMarker(true);
     }
   }
 
@@ -462,14 +549,20 @@ export default function App() {
     SetResultPageData({show: false, result: null})
   };
 
+  const onSelBtnPressed = e => {
+    if (game_state === CAPSEL) {
+      onSelCap(e);
+    } else if (game_state === SPYSEL) {
+      onSelSpy(e);
+    }
+  };
+
   const onSelCap = e => {
     e.preventDefault();
-    cap_buffer.push({capinfo:selectedCity, destroyed: false});
+    cap_buffer.push({capinfo:selectedCity, destroyed: false, scannedBy: []});
     // If we have selected enough caps then send them and switch to waiting
     if(cap_buffer.length === cap_count)
     {
-      SetInfoText({show: true, text:"Waiting for other players"})
-
       sendWSMessage("cap-sel", {room, caps:cap_buffer});
 
       let total_pop = 0;
@@ -488,7 +581,19 @@ export default function App() {
       }
       SetBombCount(new_bombCount);
       cap_buffer = [];
-      game_state = WAIT;
+
+      console.log("number of spies: ", settingsRef.current.numberOfSpies);
+
+      if(settingsRef.current.numberOfSpies > 0)
+      {
+        game_state = SPYSEL;
+        SetInfoText({show: true, text:`Place ${settingsRef.current.numberOfSpies} More Sp${settingsRef.current.numberOfSpies > 1 ? 'ies' : 'y'}`})
+      }
+      else
+      {
+        game_state = WAIT;
+        SetInfoText({show: true, text:"Waiting for other players"})
+      }
     } else {
       let rem_cap_count = cap_count - cap_buffer.length;
       SetInfoText({
@@ -496,9 +601,32 @@ export default function App() {
         text: `Select ${rem_cap_count} More Cit${rem_cap_count > 1 ? 'ies' : 'y'}`
       });
     }
-    SetShowSelCapBtn(false);
+    SetShowSelBtn(false);
     SetShowSelCityMarker(false);
     SetShowSelCityInfo(false);
+  };
+
+  const onSelSpy = e => {
+    e.preventDefault();
+    spy_buffer.push({spyinfo:selectedSpy, destroyed: false, scannedBy: []});
+    console.log("spy buffer length: ", spy_buffer.length);
+    console.log("number of spies oss", settingsRef.current.numberOfSpies);
+    if(spy_buffer.length === settingsRef.current.numberOfSpies)
+    {
+      sendWSMessage("spy-sel", {room, spies:spy_buffer});
+      spy_buffer = [];
+      game_state = WAIT;
+      SetInfoText({show: true, text:"Waiting for other players"})
+    } else {
+      let rem_spy_count = settingsRef.current.numberOfSpies - spy_buffer.length;
+      SetInfoText({
+        show: true, 
+        text: `Place ${rem_spy_count} More Sp${rem_spy_count > 1 ? 'ies' : 'y'}`
+      });
+    }
+    SetSelectedSpy({});
+    SetShowSelBtn(false);
+    SetShowSelSpyMarker(false);
   };
 
   const onLaunch = e => {
@@ -513,7 +641,7 @@ export default function App() {
       SetShowLaunchBtn(false);
       SetShowBombBtns(false);
       SetCityInfoControl(true);
-      sendWSMessage("client-turn", {room, bomb:{center:preBomb.center, radius: preBomb.radius, ownerID: my_connection_id}});
+      sendWSMessage("client-bomb", {room, bomb:{center:preBomb.center, radius: preBomb.radius, ownerID: my_connection_id}});
     }
   };
 
@@ -523,6 +651,41 @@ export default function App() {
       SetPreBomb({center:preBomb.center, radius:bomb_datas[index].rad})
     }
   };
+
+  const onPanToSpyBtnPress = () => {
+    console.log(usersRef.current);
+    if(activeSpyInfo) {
+      mapRef.current.panTo({lat: activeSpyInfo.lat, lng: activeSpyInfo.lng});
+      mapRef.current.setZoom(6);
+    }
+  }
+
+  const onMoveSpyBtnPress = () => {
+    if(activeSpyInfo && selectedSpy) {
+      if(spyCanMove(activeSpyInfo, selectedSpy)) {
+        sendWSMessage("client-spy", {room, spyIdx: activeSpyIdx, newSpyInfo: selectedSpy});
+        SetSelectedSpy({});
+        SetShowSelSpyMarker(false);
+
+        const my_user = usersRef.current.find(u => u.connectionId === my_connection_id);
+        const next_nondestroyed_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdx && !spy.destroyed);
+        if(next_nondestroyed_spy_idx !== -1) {
+          SetActiveSpyIdx(next_nondestroyed_spy_idx);
+          SetActiveSpyInfo(my_user.spies[next_nondestroyed_spy_idx].spyinfo);
+        } else {
+          SetActiveSpyIdx(-1);
+          SetActiveSpyInfo(null);
+          SetShowSpyBtns(false);
+          
+          turn_state = BOMB;
+          SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+          SetShowBombBtns(true);
+        }
+      } else {
+        addAlert("Spy can't move that far", null, 2000);
+      }
+    }
+  }
 
   const OnControlChange = (e) => {
     if(is_my_turn)
@@ -561,8 +724,67 @@ export default function App() {
   const scrollToCapital = (lat, lng) => {
     if (mapRef.current) {
       mapRef.current.panTo({ lat, lng });
-      mapRef.current.setZoom(8); // Adjust zoom level as needed
+      mapRef.current.setZoom(8);
     }
+  };
+
+  const showAsset = (destroyed, user) => {
+    return (destroyed || user.connectionId === my_connection_id)
+  };
+
+  const showScannedAsset = (destroyed, scannedBy, user) => {
+    return !showAsset(destroyed, user)
+      && scannedBy.includes(my_connection_id)
+  };
+
+  const renderCap = (cap, user, index) => {
+    if(showAsset(cap.destroyed, user)) {
+      return capMarker(cap, GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
+    } else if (showScannedAsset(cap.destroyed, cap.scannedBy, user)) {
+      return capMarker(cap, "Gray", index);
+    }
+  };
+
+  const renderSpy = (spy, user, index, colorOvrd = undefined) => {
+    if(showAsset(spy.destroyed, user)) {
+      return spyMarker(spy, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
+    } else if (showScannedAsset(spy.destroyed, spy.scannedBy, user)) {
+      return spyMarker(spy, colorOvrd ?? "Gray", index);
+    }
+  }
+
+  const capMarker = (cap, color, index) => {
+    return (
+      <Marker
+          position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
+          icon={{
+            path: cap_path,
+            fillColor: color,
+            fillOpacity: 0.8,
+            strokeWeight: 0,
+            scale: ((mapZoom ** 1.3) / 20),
+            anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
+            }}
+          options={{clickable:false}}
+          key={index}
+        />);
+  };
+
+  const spyMarker = (spy, color, index) => {
+    return (
+      <Marker
+          position={{ lat: spy.spyinfo.lat, lng: spy.spyinfo.lng }}
+          icon={{
+            path: spy_path,
+            fillColor: color,
+            fillOpacity: 0.8,
+            strokeWeight: 0,
+            scale: ((mapZoom ** 1.3) / 20),
+            anchor: new window.google.maps.Point(50 / 2, 50 / 2),
+            }}
+          options={{clickable:false}}
+          key={index}
+        />);
   };
 
   return <div>
@@ -623,50 +845,62 @@ export default function App() {
       ))}
 
       {showSelCityMarker && selectedCity && selectedCity.lat && selectedCity.lng &&
-      <Marker
-      position={{ lat: selectedCity.lat, lng: selectedCity.lng }}
-      options={{clickable:false}}
-      />
+        <Marker
+          position={{ lat: selectedCity.lat, lng: selectedCity.lng }}
+          options={{clickable:false}}
+        />
       }
 
       {users.map((user) => (
-        user.caps.map((cap, index) => (
-          (cap.destroyed || user.connectionId === my_connection_id) && cap.capinfo &&
-          <Marker
-            position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
-            icon={{
-              path: cap_path,
-              fillColor: GetCSSColor(GetPlayerColorIdx(user.connectionId)),
-              fillOpacity: 0.8,
-              strokeWeight: 0,
-              scale: ((mapZoom ** 1.3) / 20),
-              anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
-              }}
-            options={{clickable:false}}
-            key={index}
-          />
-          )
-        )
+        user.caps.map((cap, index) => renderCap(cap, user, index))
       ))}
+
+      {users.map((user) => (
+        user.spies.map((spy, index) => {
+          if(activeSpyIdx === index && showSelSpyMarker) return renderSpy(spy, user, index, "Gainsboro");
+          return renderSpy(spy, user, index);
+        }
+      )))}
 
       {cap_buffer && 
       cap_buffer.map((cap, index) => (
-        cap.capinfo &&
-        <Marker
-          position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
-          icon={{
-            path: cap_path,
-            fillColor: GetCSSColor(GetPlayerColorIdx(my_connection_id)),
-            fillOpacity: 0.8,
-            strokeWeight: 0,
-            scale: ((mapZoom ** 1.3) / 20),
-            anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
-            }}
-          options={{clickable:false}}
-          key={index}
-        />
-        ))
+        cap.capinfo && capMarker(cap, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+      ))}
+
+      {showSelSpyMarker && selectedSpy && selectedSpy.lat && selectedSpy.lng &&
+        spyMarker({spyinfo:selectedSpy}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1)
       }
+
+      { // Show active spy move and scan max radius
+      activeSpyIdx !== -1 && activeSpyInfo && activeSpyInfo.lat && activeSpyInfo.lng &&
+        <Circle
+          center={{lat: activeSpyInfo.lat, lng: activeSpyInfo.lng}}
+          radius={spy_move_scan_max_radius}
+          options={{clickable:false}}
+        />
+      }
+      { // Show active spy move max radius
+      activeSpyIdx !== -1 && activeSpyInfo && activeSpyInfo.lat && activeSpyInfo.lng &&
+        <Circle
+          center={{lat: activeSpyInfo.lat, lng: activeSpyInfo.lng}}
+          radius={spy_move_max_radius}
+          options={{clickable:false}}
+        />
+      }
+
+      { // Show selected spy scan radius at new position
+      activeSpyIdx !== -1 && showSelSpyMarker && selectedSpy && spyCanMoveScan(activeSpyInfo, selectedSpy) &&
+        <Circle
+          center={{lat: selectedSpy.lat, lng: selectedSpy.lng}}
+          radius={spy_search_radius}
+          options={{clickable:false}}
+        />
+      }
+
+      {spy_buffer &&
+      spy_buffer.map((spy, index) => (
+        spy.spyinfo && spyMarker(spy, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+      ))};
 
       {is_my_turn && preBomb && preBomb.center && preBomb.center.lat && preBomb.center.lng &&
       <Circle
@@ -682,18 +916,37 @@ export default function App() {
     <CityInfo cityinfo={selectedCity}/>
     }
 
-    {showSelCapBtn &&
+    {showSelBtn &&
     <div className='sel-cap-btn-div'>
     <Button
       className="sel-cap-btn"
       variant="contained"
       color="primary"
-      onClick={onSelCap}
-      disabled={selCapBtnDisabled}
+      onClick={onSelBtnPressed}
+      disabled={selBtnDisabled}
       >
-        {selCapBtnText}
+        {selBtnText}
     </Button></div>}
 
+    {showSpyBtns &&
+    
+    <div className="spy-btn-container">
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={onPanToSpyBtnPress}
+        >
+          Pan To Spy
+        </Button>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={onMoveSpyBtnPress}
+          disabled={!spyCanMove(activeSpyInfo, selectedSpy)}
+        >
+          {spyCanMoveScan(activeSpyInfo, selectedSpy) ? "Move and Scan" : "Move"}
+        </Button>
+    </div>}
 
     {showBombBtns &&
     <div className="bomb-btn-container">
@@ -748,7 +1001,7 @@ export default function App() {
     <div className="mouse-container">
       {showBombBtns &&
        <div className="mouse-div">
-        Bomb Selection
+        {turn_state == SPY ? "Spy Selection" : "Bomb Selection"}
         <RightMouse css_color="white"/>
       </div>}
       <div className="mouse-div">
@@ -761,12 +1014,15 @@ export default function App() {
     <div className="control-switch-div">
       <FormControlLabel
         control={<Switch checked={!CityInfoControl} onChange={OnControlChange} />}
-        label={(CityInfoControl ? "City Info" : "Bomb Select")}
+        label={(CityInfoControl 
+          ? "City Info" 
+          : (turn_state == BOMB
+            ? "Bomb Select"
+            : "Spy Select"
+          ))}
         labelPlacement="top"
       />
     </div>}
-
-    
 
   </div>
 }
@@ -782,11 +1038,8 @@ async function GetCityInfoFromLatLng(lat, lng, rad) {
       cityinfo = {
         name:         info.name,
         pop:          info.population,
-        // lat:          parseFloat(info.latitude),
         lat:          parseFloat(info.coordinates[0]),
-        // lng:          parseFloat(info.longitude),
         lng:          parseFloat(info.coordinates[1]),
-        // country:      info.country,
         country:      info.cou_name_en,
         country_code: info.country_code
       }

@@ -1,0 +1,23 @@
+.spy_sym {
+    width: 2em;
+    height: 2em;
+    margin: 0px 0px;
+    display: flex;
+    align-content: center;
+    vertical-align: middle;
+}
+
+.spy_svg {
+    height: 80%;
+    display: block;
+    margin: auto;
+}
+
+@media only screen and (max-width: 812px) {
+    
+.spy_sym {
+    width: 1.6em;
+    height: 1.6em;
+}
+
+}

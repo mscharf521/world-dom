@@ -21,13 +21,13 @@ const createRoom = async (roomId, password) => {
     turnOrder: [],
     turnIndex: 0,
     bombs: [],
-    num_caps: 3,
+    num_caps: 1,//3,
     min_pop: 0,
     only_caps: false,
     country_whitelist: [],
     country_blacklist: [],
     bomb_scale: 100,
-    num_spies: 0,
+    num_spies: 1,//0,
     ttl: Date.now() + TTL_12_HOURS
   };
 
@@ -64,7 +64,9 @@ const getRoomData = async (roomId) => {
       minPopulation: room.Item.min_pop,
       onlyCapitals: room.Item.only_caps,
       whitelistCountries: room.Item.country_whitelist,
-      blacklistCountries: room.Item.country_blacklist
+      blacklistCountries: room.Item.country_blacklist,
+      bombScale: room.Item.bomb_scale,
+      numberOfSpies: room.Item.num_spies
     };
   }
   return room.Item;
@@ -107,14 +109,15 @@ const setRoomSettings = async (roomId, settings) => {
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${roomId}`, SK: 'METADATA' },
-    UpdateExpression: 'set num_caps = :num_caps, min_pop = :min_pop, only_caps = :only_caps, country_whitelist = :country_whitelist, country_blacklist = :country_blacklist, bomb_scale = :bomb_scale',
+    UpdateExpression: 'set num_caps = :num_caps, min_pop = :min_pop, only_caps = :only_caps, country_whitelist = :country_whitelist, country_blacklist = :country_blacklist, bomb_scale = :bomb_scale, num_spies = :num_spies',
     ExpressionAttributeValues: {
       ':num_caps': settings.numberOfCapitals,
       ':min_pop': settings.minPopulation,
       ':only_caps': settings.onlyCapitals,
       ':country_whitelist': settings.whitelistCountries,
       ':country_blacklist': settings.blacklistCountries,
-      ':bomb_scale': settings.bombScale
+      ':bomb_scale': settings.bombScale,
+      ':num_spies': settings.numberOfSpies
     }
   }));
 };
@@ -227,6 +230,42 @@ const setUserCapitals = async (roomId, connectionId, capitals) => {
   }));
 };
 
+const addScannedByUserCap = async (roomId, connectionId, index, scannerId) => {
+  await addScannedByInList(roomId, connectionId, "caps", index, scannerId);
+};
+const addScannedByUserSpies = async (roomId, connectionId, index, scannerId) => {
+  await addScannedByInList(roomId, connectionId, "spies", index, scannerId);
+};
+const addScannedByInList = async (roomId, connectionId, list_name, index, scannerId) => {
+  const list_str = list_name + '[' + index + ']';
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: { PK: `ROOM#${roomId}`, SK: `USER#${connectionId}` },
+    UpdateExpression: `set ${list_str}.scannedBy = list_append(${list_str}.scannedBy, :scannedBy)`,
+    ExpressionAttributeValues: {
+      ':scannedBy': [scannerId]
+    }
+  }));
+};
+
+const destroyUserCap = async (roomId, connectionId, index, scannerId) => {
+  await destroyInList(roomId, connectionId, "caps", index, scannerId);
+};
+const destroyUserSpies = async (roomId, connectionId, index) => {
+  await destroyInList(roomId, connectionId, "spies", index);
+}
+const destroyInList = async (roomId, connectionId, list_name, index) => {
+  const list_str = list_name + '[' + index + ']';
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: { PK: `ROOM#${roomId}`, SK: `USER#${connectionId}` },
+    UpdateExpression: `set ${list_str}.destroyed = :destroyed`,
+    ExpressionAttributeValues: {
+      ':destroyed': true
+    }
+  }));
+};
+
 const setUserSpies = async (roomId, connectionId, spies) => {
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
@@ -241,16 +280,16 @@ const setUserSpies = async (roomId, connectionId, spies) => {
   }));
 };
 
-const destroyUserCap = async (roomId, connectionId, index) => {
+const setSpyInfo = async (roomId, connectionId, index, info) => {
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${roomId}`, SK: `USER#${connectionId}` },
-    UpdateExpression: 'set caps[' + index + '].destroyed = :destroyed',
+    UpdateExpression: `set spies[${index}].spyinfo = :info`,
     ExpressionAttributeValues: {
-      ':destroyed': true
+      ':info': info
     }
   }));
-};
+}; 
 
 const removeUserFromRoom = async (roomId, connectionId) => {
   await docClient.send(new DeleteCommand({
@@ -269,10 +308,15 @@ module.exports = {
   getUsersInRoom,
   getUserByConnection,
   setUserCapitals,
+  setUserSpies,
   destroyUserCap,
+  destroyUserSpies,
+  addScannedByUserCap,
+  addScannedByUserSpies,
   incRoomTurnIndex,
   removeIDFromTurnOrder,
   removeUserFromRoom,
   removeRoom,
-  setRoomSettings
+  setRoomSettings,
+  setSpyInfo
 }; 
