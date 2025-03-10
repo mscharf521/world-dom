@@ -292,7 +292,6 @@ export default function App() {
               if(settingsRef.current.numberOfSpies > 0) {
                 turn_state = SPY;
                 const my_user = payload.data.users.find(u => u.connectionId === my_connection_id);
-                console.log(my_user);
                 const first_nondestroyed_spy_idx = my_user.spies.findIndex(spy => !spy.destroyed);
                 if(first_nondestroyed_spy_idx !== -1) {
                   SetActiveSpyIdx(first_nondestroyed_spy_idx);
@@ -584,8 +583,6 @@ export default function App() {
       SetBombCount(new_bombCount);
       cap_buffer = [];
 
-      console.log("number of spies: ", settingsRef.current.numberOfSpies);
-
       if(settingsRef.current.numberOfSpies > 0)
       {
         game_state = SPYSEL;
@@ -611,8 +608,6 @@ export default function App() {
   const onSelSpy = e => {
     e.preventDefault();
     spy_buffer.push({spyinfo:selectedSpy, destroyed: false, scannedBy: []});
-    console.log("spy buffer length: ", spy_buffer.length);
-    console.log("number of spies oss", settingsRef.current.numberOfSpies);
     if(spy_buffer.length === settingsRef.current.numberOfSpies)
     {
       sendWSMessage("spy-sel", {room, spies:spy_buffer});
