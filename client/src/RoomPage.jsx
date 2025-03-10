@@ -73,7 +73,7 @@ export default function RoomPage(props) {
           <Slider
             value={props.settings?.numberOfSpies}
             onChange={(e, newValue) => handleSettingChange('numberOfSpies', newValue)}
-            min={1}
+            min={0}
             max={10}
             step={1}
             disabled={!props.isLeader}

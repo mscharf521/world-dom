@@ -21,13 +21,13 @@ const createRoom = async (roomId, password) => {
     turnOrder: [],
     turnIndex: 0,
     bombs: [],
-    num_caps: 1,//3,
+    num_caps: 3,
     min_pop: 0,
     only_caps: false,
     country_whitelist: [],
     country_blacklist: [],
     bomb_scale: 100,
-    num_spies: 1,//0,
+    num_spies: 0,
     ttl: Date.now() + TTL_12_HOURS
   };
 

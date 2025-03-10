@@ -13,9 +13,6 @@ import CapSymbol from './CapSymbol'
 //}
 
 export default function CityInfo(props) {
-
-  const [flagErrorCnt, SetFlagErrorCnt] = useState(0);
-
   function OnWikiClick() {
     let search_str = props.cityinfo.name
     if(props.cityinfo.country_code === "US")
@@ -34,7 +31,6 @@ export default function CityInfo(props) {
     ev.target.onError = null;
     ev.target.className = "flag3";
     ev.target.src = earthflag
-
   }
 
   return <div className="city-info">

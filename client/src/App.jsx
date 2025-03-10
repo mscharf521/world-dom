@@ -56,6 +56,8 @@ let spy_buffer = [];
 let is_my_turn = false;
 let player_colors = [];
 
+let dragStart = null;
+
 const start_zoom = 2;//10;
 const mapContainerStyle = {
   width: "100%",
@@ -132,8 +134,8 @@ export default function App() {
     whitelistCountries: [],
     blacklistCountries: [],
     bombScale: 100,
-    numberOfCapitals: 1,//3,
-    numberOfSpies: 1//0
+    numberOfCapitals: 3,
+    numberOfSpies: 0
   });
 
   function SetStartState()
@@ -497,7 +499,7 @@ export default function App() {
 
   const bombPanToLoc = (bomb) => {
     mapRef.current.panTo(bomb.center)
-    mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bomb.radius)].zoom)
+    mapRef.current.setZoom(bomb_datas[GetBombIdxfromRadius(bomb.radius, bomb_datas)].zoom)
   };
 
   const onSendMsg = e => {
@@ -922,7 +924,21 @@ export default function App() {
       <Circle
         center={preBomb.center}
         radius={preBomb.radius}
-        options={{clickable:false}}
+        options={{
+          draggable: true,
+        }}
+        onDragStart={(e) => { dragStart = {lat:e.latLng.lat(), lng:e.latLng.lng()} }}
+        onDragEnd={(e) => {
+          const dragDiff = {lat: e.latLng.lat() - dragStart.lat, lng: e.latLng.lng() - dragStart.lng};
+          SetPreBomb(prev => {
+            if(!prev.center) return prev;
+            return (
+              {...prev,
+                center:{lat:prev.center.lat + dragDiff.lat, lng:prev.center.lng + dragDiff.lng}
+              }
+            );
+          })
+        }}
       />}
 
     </GoogleMap></div>
@@ -1104,7 +1120,7 @@ function GetPlayerColorIdx(connectionId)
   }
 }
 
-function GetBombIdxfromRadius(radius)
+function GetBombIdxfromRadius(radius, bomb_datas)
 {
   let idx = -1;
   for(const bomb_data of bomb_datas)
