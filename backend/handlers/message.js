@@ -49,7 +49,7 @@ const startGame = async (roomId, usersInRoom, connectionId, domainName, stage) =
 exports.handler = async (event) => {
   const { connectionId, domainName, stage } = event.requestContext;
 
-  if(!CONSTANTS) CONSTANTS = await import("@world-dom/common/constants.js");
+  if(!CONSTANTS) CONSTANTS = (await import("@world-dom/common/constants.js")).CONSTANTS;
   
   try {
     const payload = JSON.parse(event.body);
@@ -248,7 +248,6 @@ exports.handler = async (event) => {
               if(!spy.scannedBy?.includes(connectionId)) {
                 const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, spy.spyinfo.lat, spy.spyinfo.lng);
                 if(dst_km <= spy_search_radius) {
-                  console.log("room: 2", roomId);
                   await addScannedByUserSpies(roomId, user.connectionId, spy_index, connectionId);
                   await sendToConnection(
                     connectionId,

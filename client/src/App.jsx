@@ -258,7 +258,6 @@ export default function App() {
           break;
 
         case 'room-users':
-          console.log("room-users", payload.data.users);
           SetUsers(payload.data.users);
           break;
 
