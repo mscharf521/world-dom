@@ -4,11 +4,8 @@ import "./SpySymbol.css"
 export default function SpySymbol(props) {
     return <div className="spy_sym">
         {
-            // <svg className="spy_svg" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-            // width="48.384px" height="48.384px" viewBox="0 0 48.384 48.384" 
-            // >
-            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 420 420" xml:space="preserve" stroke="#000000" stroke-width="5.46">
-                <g fill={props.color}> 
+            <svg viewBox="-5 -5 60 60" stroke={props.color} fill={props.css_color} strokeWidth="1">
+                <g fill={props.css_color}> 
                     <path d={spy_path}></path>
                 </g>
             </svg>}

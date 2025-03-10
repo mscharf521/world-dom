@@ -3,6 +3,7 @@ import { Card } from '@mui/material';
 import './PlayerCard.css'
 import './font.css'
 import CapSymbol from "./CapSymbol"
+import SpySymbol from "./SpySymbol";
 
 function getClassName(active)
 {
@@ -10,13 +11,13 @@ function getClassName(active)
 }
 
 export default function PlayerCard(props) {
-  const handleCapClick = (capinfo, destroyed) => {
-    if (props.onCapClick && canClickCap(destroyed)) {
-      props.onCapClick(capinfo.lat, capinfo.lng);
+  const handleAssetClick = (lat, lng, destroyed) => {
+    if (props.onCapClick && canClickAsset(destroyed)) {
+      props.onCapClick(lat, lng);
     }
   };
 
-  const canClickCap = (destroyed) => {
+  const canClickAsset = (destroyed) => {
     return props.my_board || destroyed;
   }
 
@@ -27,11 +28,21 @@ export default function PlayerCard(props) {
         {props.user.caps.map((cap, index) => (
             <div 
               key={index} 
-              onClick={() => handleCapClick(cap.capinfo, cap.destroyed)}
-              style={canClickCap(cap.destroyed) ? {cursor: 'pointer'} : {cursor: 'default'}}
+              onClick={() => handleAssetClick(cap.capinfo.lat, cap.capinfo.lng, cap.destroyed)}
+              style={canClickAsset(cap.destroyed) ? {cursor: 'pointer'} : {cursor: 'default'}}
               className={"cap-div-item"}
             >
-              <CapSymbol capinfo={cap} css_color={props.css_color}/>
+              <CapSymbol css_color={cap.destroyed ? "Gray" : props.css_color}/>
+            </div>
+        ))}
+        {props.user.spies.map((spy, index) => (
+            <div 
+              key={index} 
+              onClick={() => handleAssetClick(spy.spyinfo.lat, spy.spyinfo.lng, spy.destroyed)}
+              style={canClickAsset(spy.destroyed) ? {cursor: 'pointer'} : {cursor: 'default'}}
+              className={"cap-div-item"}
+            >
+              <SpySymbol css_color={spy.destroyed ? "Grey" : props.css_color}/>
             </div>
         ))}
       </div>

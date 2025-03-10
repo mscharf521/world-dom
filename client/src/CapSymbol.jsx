@@ -2,28 +2,11 @@ import React from 'react'
 import "./CapSymbol.css"
 
 export default function CapSymbol(props) {
-
-	function GetColor()
-	{
-		if(!props.capinfo.destroyed)
-		{
-			return props.css_color
-		}
-		return "grey";
-	}
-
 	return <div className="cap_sym">
-		{false && <svg className="cap_svg" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	viewBox="0 0 512 512">
-		<g fill={GetColor()}>
-	   		<path d={cap_path}/>
-		</g>
-	</svg>}
-
 	{true && <svg className="cap_svg" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 width="48.384px" height="48.384px" viewBox="0 0 48.384 48.384" 
 	 >
-		<g fill={GetColor()}>
+		<g fill={props.css_color}>
 		<path d="M44.384,24.18c-0.002,0.561-0.021,1.117-0.062,1.674c-0.02,0.276-0.047,0.552-0.076,0.826
 		c-0.016,0.137-0.032,0.272-0.051,0.409c0.08-0.614-0.008,0.021-0.026,0.146c-0.177,1.111-0.449,2.207-0.794,3.277
 		c-0.162,0.508-0.35,1.008-0.549,1.502c-0.176,0.436,0.182-0.42-0.004,0.01c-0.053,0.121-0.106,0.242-0.162,0.362

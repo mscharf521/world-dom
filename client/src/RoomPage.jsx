@@ -68,6 +68,18 @@ export default function RoomPage(props) {
           />
         </div>
         
+        <div className="SettingField">
+          <label>Number of Spies: {props.settings?.numberOfSpies}</label>
+          <Slider
+            value={props.settings?.numberOfSpies}
+            onChange={(e, newValue) => handleSettingChange('numberOfSpies', newValue)}
+            min={1}
+            max={10}
+            step={1}
+            disabled={!props.isLeader}
+          />
+        </div>
+        
         <TextField
           label="Minimum Population"
           type="number"

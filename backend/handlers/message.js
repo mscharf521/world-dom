@@ -21,6 +21,8 @@ const { checkWinCondition } = require('../utils/wincon');
 const { broadcastToRoom, sendToConnection } = require('../utils/send');
 const { leaveRoom } = require('../utils/leave');
 const { getDistanceFromLatLng } = require('../utils/dst');
+const { SendUpToDateUserData } = require('../utils/sendusers');
+const { CONSTANTS } = require('../../common/constants');
 
 const startGame = async (roomId, usersInRoom, connectionId, domainName, stage) => {
   shuffle(usersInRoom);
@@ -193,9 +195,9 @@ exports.handler = async (event) => {
         const { room: roomId, spyIdx, newSpyInfo } = data;
         let usersInRoom = await getUsersInRoom(roomId);
 
-        const spy_search_radius = 200000 / 1000;
-        const spy_move_scan_max_radius = 300000 / 1000;
-        const spy_move_max_radius = 1500000 / 1000;
+        const spy_search_radius = CONSTANTS.spy_search_radius;
+        const spy_move_scan_max_radius = CONSTANTS.spy_move_scan_max_radius;
+        const spy_move_max_radius = CONSTANTS.spy_move_max_radius;
 
         const act_user = usersInRoom.find(user => user.connectionId === connectionId);
         if (!act_user) {
@@ -437,29 +439,4 @@ function shuffle(array) {
   }
 
   return array;
-}
-
-async function SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom = null) {
-  if(usersInRoom == null)
-  {
-    usersInRoom = await getUsersInRoom(roomId);
-  }
-  await broadcastToRoom(
-    roomId,
-    {
-      type: 'room-users',
-      data: {
-        users: usersInRoom.map(user => ({
-          username: user.username,
-          connectionId: user.connectionId,
-          caps: user.caps,
-          spies: user.spies
-        }))
-      }
-    },
-    connectionId,
-    domainName,
-    stage,
-    usersInRoom
-  )
 }

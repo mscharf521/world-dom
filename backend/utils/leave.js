@@ -6,7 +6,7 @@ const {
     removeRoom 
 } = require('../utils/gameData');
 const { checkWinCondition } = require('../utils/wincon');
-const { broadcastToRoom } = require('../utils/send');
+const { SendUpToDateUserData } = require('./sendusers');
 
 async function leaveRoom(connectionId, domainName, stage)
 {
@@ -23,23 +23,7 @@ async function leaveRoom(connectionId, domainName, stage)
         {
             await checkWinCondition(room_data, usersInRoom);
 
-            await broadcastToRoom(
-              user.room,
-              {
-                type: 'room-users',
-                data: {
-                    users: usersInRoom.map(user => ({
-                      username: user.username,
-                      connectionId: user.connectionId,
-                      caps: user.caps
-                    }))
-                  }
-              },
-              connectionId,
-              domainName,
-              stage,
-              usersInRoom
-            );
+            await SendUpToDateUserData(user.room, connectionId, domainName, stage, usersInRoom);
         }
         else
         {

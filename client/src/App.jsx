@@ -29,6 +29,8 @@ import MultiUseInfo from "./MultiUseInfo";
 
 import { getDistanceFromLatLng } from "./dst";
 
+import { CONSTANTS } from "../../common/constants";
+
 // WebSocket connection
 const WS_URL = process.env.NODE_ENV == "production" ? import.meta.env.VITE_WS_URL : 'ws://localhost:3001';
 const ws = new WebSocket(WS_URL);
@@ -187,9 +189,9 @@ export default function App() {
     }
   })
 
-  const spy_search_radius = 200000;
-  const spy_move_scan_max_radius = 300000;
-  const spy_move_max_radius = 1500000;
+  const spy_search_radius = CONSTANTS.spy_search_radius;
+  const spy_move_scan_max_radius = CONSTANTS.spy_move_scan_max_radius;
+  const spy_move_max_radius = CONSTANTS.spy_move_max_radius;
   
   const bomb_datas = [
     {rad: 150000 * settings.bombScale / 100,  text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
@@ -384,7 +386,7 @@ export default function App() {
 
   const spyCanMoveScan = (activeSpy, movedSpy) => {
     const distance = getDistanceFromLatLng(activeSpy.lat, activeSpy.lng, movedSpy.lat, movedSpy.lng);
-    return distance <= spy_move_scan_max_radius / 1000;
+    return distance <= spy_move_scan_max_radius;
   };
 
   const spyCanMove = (activeSpy, movedSpy) => {
@@ -653,10 +655,9 @@ export default function App() {
   };
 
   const onPanToSpyBtnPress = () => {
-    console.log(usersRef.current);
     if(activeSpyInfo) {
       mapRef.current.panTo({lat: activeSpyInfo.lat, lng: activeSpyInfo.lng});
-      mapRef.current.setZoom(6);
+      mapRef.current.setZoom(5);
     }
   }
 
@@ -840,7 +841,11 @@ export default function App() {
           key={index}
           center={bomb.center}
           radius={bomb.radius}
-          options={{clickable:false, fillColor:GetCSSColor(GetPlayerColorIdx(bomb.ownerID)), strokeColor:GetCSSColor(GetPlayerColorIdx(bomb.ownerID))}}
+          options={{
+            clickable:false, 
+            fillColor:GetCSSColor(GetPlayerColorIdx(bomb.ownerID)), 
+            strokeColor:GetCSSColor(GetPlayerColorIdx(bomb.ownerID))
+          }}
         />
       ))}
 
@@ -857,7 +862,7 @@ export default function App() {
 
       {users.map((user) => (
         user.spies.map((spy, index) => {
-          if(activeSpyIdx === index && showSelSpyMarker) return renderSpy(spy, user, index, "Gainsboro");
+          if(activeSpyIdx === index && showSelSpyMarker) return renderSpy(spy, user, index, "DimGrey");
           return renderSpy(spy, user, index);
         }
       )))}
@@ -875,16 +880,28 @@ export default function App() {
       activeSpyIdx !== -1 && activeSpyInfo && activeSpyInfo.lat && activeSpyInfo.lng &&
         <Circle
           center={{lat: activeSpyInfo.lat, lng: activeSpyInfo.lng}}
-          radius={spy_move_scan_max_radius}
-          options={{clickable:false}}
+          radius={spy_move_scan_max_radius * 1000}
+          options={{
+            clickable:false, 
+            fillColor:GetCSSColor(GetPlayerColorIdx(my_connection_id)), 
+            fillOpacity: 0.2,
+            strokeColor: GetCSSColor(GetPlayerColorIdx(my_connection_id)),
+            strokeOpacity: 0.2,
+          }}
         />
       }
       { // Show active spy move max radius
       activeSpyIdx !== -1 && activeSpyInfo && activeSpyInfo.lat && activeSpyInfo.lng &&
         <Circle
           center={{lat: activeSpyInfo.lat, lng: activeSpyInfo.lng}}
-          radius={spy_move_max_radius}
-          options={{clickable:false}}
+          radius={spy_move_max_radius * 1000}
+          options={{
+            clickable:false, 
+            fillColor:"Gainsboro", 
+            fillOpacity: 0.1,
+            strokeColor: "Black",
+            strokeOpacity: 0.5,
+          }}
         />
       }
 
@@ -892,8 +909,12 @@ export default function App() {
       activeSpyIdx !== -1 && showSelSpyMarker && selectedSpy && spyCanMoveScan(activeSpyInfo, selectedSpy) &&
         <Circle
           center={{lat: selectedSpy.lat, lng: selectedSpy.lng}}
-          radius={spy_search_radius}
-          options={{clickable:false}}
+          radius={spy_search_radius * 1000}
+          options={{
+            clickable:false, 
+            fillColor:GetCSSColor(GetPlayerColorIdx(my_connection_id)), 
+            strokeColor:GetCSSColor(GetPlayerColorIdx(my_connection_id))
+          }}
         />
       }
 
