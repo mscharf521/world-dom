@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "s3-upload": "aws s3 cp dist s3://world-domination.com --recursive --acl public-read",
     "invalidate-cdn": "aws cloudfront create-invalidation --distribution-id E3VRMXDF4WCATT --paths \"/*\"",
-    "deploy": "npm run build && npm run s3-upload && npm run invalidate-cdn"
+    "deploy": "npm run build && npm run s3-upload && npm run invalidate-cdn",
+    "postinstall": "npm link @world-dom/common"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

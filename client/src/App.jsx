@@ -29,7 +29,7 @@ import MultiUseInfo from "./MultiUseInfo";
 
 import { getDistanceFromLatLng } from "./dst";
 
-import { CONSTANTS } from "../../common/constants";
+import { CONSTANTS } from "@world-dom/common/constants";
 
 // WebSocket connection
 const WS_URL = process.env.NODE_ENV == "production" ? import.meta.env.VITE_WS_URL : 'ws://localhost:3001';
@@ -350,7 +350,7 @@ export default function App() {
             break;
       
         default:
-            console.log("Unknown message type:", payload.type);
+            console.log("Unknown message type:", payload);
             break;
       }
     };

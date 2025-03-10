@@ -22,7 +22,8 @@ const { broadcastToRoom, sendToConnection } = require('../utils/send');
 const { leaveRoom } = require('../utils/leave');
 const { getDistanceFromLatLng } = require('../utils/dst');
 const { SendUpToDateUserData } = require('../utils/sendusers');
-const { CONSTANTS } = require('../../common/constants');
+
+let CONSTANTS = null;
 
 const startGame = async (roomId, usersInRoom, connectionId, domainName, stage) => {
   shuffle(usersInRoom);
@@ -47,6 +48,8 @@ const startGame = async (roomId, usersInRoom, connectionId, domainName, stage) =
 
 exports.handler = async (event) => {
   const { connectionId, domainName, stage } = event.requestContext;
+
+  if(!CONSTANTS) CONSTANTS = await import("@world-dom/common/constants.js");
   
   try {
     const payload = JSON.parse(event.body);
@@ -220,7 +223,7 @@ exports.handler = async (event) => {
               if(user.connectionId === connectionId) continue;
 
               const cap = user.caps[cap_index];
-              if(!cap.scannedBy.includes(connectionId)) {
+              if(!cap.scannedBy?.includes(connectionId)) {
                 const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, cap.capinfo.lat, cap.capinfo.lng);
                 if(dst_km <= spy_search_radius) {
                   await addScannedByUserCap(roomId, user.connectionId, cap_index, connectionId);
@@ -242,7 +245,7 @@ exports.handler = async (event) => {
               if(user.connectionId === connectionId) continue;
 
               const spy = user.spies[spy_index];
-              if(!spy.scannedBy.includes(connectionId)) {
+              if(!spy.scannedBy?.includes(connectionId)) {
                 const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, spy.spyinfo.lat, spy.spyinfo.lng);
                 if(dst_km <= spy_search_radius) {
                   console.log("room: 2", roomId);
