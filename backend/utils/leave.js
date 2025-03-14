@@ -23,7 +23,8 @@ async function leaveRoom(connectionId, domainName, stage)
         {
             await checkWinCondition(room_data, usersInRoom);
 
-            await SendUpToDateUserData(user.room, connectionId, domainName, stage, usersInRoom);
+            await SendUpToDateUserData(user.room, connectionId, domainName, stage, 
+                usersInRoom.filter(user => user.connectionId != connectionId));
         }
         else
         {

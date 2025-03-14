@@ -279,7 +279,6 @@ exports.handler = async (event) => {
         let usersInRoom = await getUsersInRoom(roomId);
 
         await addBombToRoom(roomId, bomb);
-        await incRoomTurnIndex(roomId);
 
         let room_data = await getRoomData(roomId);
 
@@ -367,16 +366,18 @@ exports.handler = async (event) => {
             await checkWinCondition(room_data, usersInRoom, domainName, stage);
   
             // could improve this by not fetching the room data again?
-            room_data = await getRoomData(roomId);
+            // room_data = await getRoomData(roomId);
           }
         }
+
+        const turnIndex = await incRoomTurnIndex(roomId);
 
         await broadcastToRoom(
           roomId,
           {
             type: 'next-turn',
             data: {
-              userID: room_data.turnOrder[room_data.turnIndex],
+              userID: room_data.turnOrder[turnIndex],
               // Pass up to date user data to avoid race conditions in the client
               users: usersInRoom.map(user => ({
                 username: user.username,

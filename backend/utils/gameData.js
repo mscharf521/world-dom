@@ -138,15 +138,18 @@ const incRoomTurnIndex = async (roomId) => {
       ':turnIndex': turnIndex
     }
   }));
+
+  return turnIndex;
 };
 
 const removeIDFromTurnOrder = async (room_data, rm_id) => {
+  room_data.turnOrder = room_data.turnOrder.filter(id => id !== rm_id)
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${room_data.id}`, SK: 'METADATA' },
     UpdateExpression: 'set turnOrder = :turnOrder',
     ExpressionAttributeValues: {
-      ':turnOrder': room_data.turnOrder.filter(id => id !== rm_id)
+      ':turnOrder': room_data.turnOrder
     }
   }));
 };  
