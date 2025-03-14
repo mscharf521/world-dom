@@ -28,11 +28,12 @@ h1, h2 {
 
 .RoomSettings h2 {
   margin-top: 0;
+  margin-bottom: 0.5em;
   color: #333;
 }
 
 .SettingField {
-  margin-bottom: 1rem !important;
+  margin-bottom: 0.5rem;
   width: 100%;
 }
 
@@ -66,7 +67,7 @@ h1, h2 {
   }
 
   .SettingField {
-    margin-bottom: 0.75rem !important;
+    margin-bottom: 0.2rem !important;
   }
 
   /* Make chips wrap nicely on mobile */

@@ -48,6 +48,12 @@ export default function RoomPage(props) {
     }
   }
 
+  const incrementMinPopulation = () => {
+    if (!props.isLeader) return;
+    const newMinPopulation = (props.settings?.minPopulation || 0) + 100000;
+    handleSettingChange('minPopulation', newMinPopulation);
+  }
+
   // Extract country options for Autocomplete
   const countryOptions = Object.keys(COUNTRIES);
 
@@ -81,20 +87,29 @@ export default function RoomPage(props) {
           />
         </div>
         
-        <NumericFormat
-          value={props.settings?.minPopulation}
-          thousandSeparator={true}
-          customInput={TextField}
-          label="Minimum Population"
-          type="text"
-          onValueChange={(values) => {
-            console.log("values: ", values);
-            handleSettingChange('minPopulation', parseInt(values.value));
-          }}
-          disabled={!props.isLeader}
-          className="SettingField"
-          size="small"
-        />
+        <div className="SettingField">
+          <NumericFormat
+            value={props.settings?.minPopulation}
+            thousandSeparator={true}
+            customInput={TextField}
+            label="Minimum Population"
+            type="text"
+            onValueChange={(values) => {
+              handleSettingChange('minPopulation', parseInt(values.value));
+            }}
+            disabled={!props.isLeader}
+            size="small"
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={incrementMinPopulation}
+            disabled={!props.isLeader}
+            style={{ marginLeft: '10px' }}
+          >
+            +100,000
+          </Button>
+        </div>
         
         <FormControlLabel
           control={
