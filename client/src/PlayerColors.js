@@ -1,7 +1,7 @@
 
 
 const bckgrnd_class = ["red",       "blue",         "green",        "orange", "purple",     "pink"]
-const css_colors =    ["Crimson",   "DodgerBlue",   "ForestGreen",  "Orange", "DarkOrchid", "HotPink"]
+const css_colors =    ["Crimson",   "RoyalBlue",   "ForestGreen",  "Orange", "DarkOrchid", "HotPink"]
 
 export function GetColorBackgroundClass(index)
 {
