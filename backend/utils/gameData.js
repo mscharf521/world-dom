@@ -125,10 +125,24 @@ const setRoomSettings = async (roomId, settings) => {
 const incRoomTurnIndex = async (roomId) => {
   const room = await getRoomData(roomId);
   let turnIndex = room.turnIndex + 1;
-  if(turnIndex >= room.turnOrder.length)
-  {
-    turnIndex = 0;
-  }
+  if(turnIndex >= room.turnOrder.length) turnIndex = 0;
+
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: { PK: `ROOM#${roomId}`, SK: 'METADATA' },
+    UpdateExpression: 'set turnIndex = :turnIndex',
+    ExpressionAttributeValues: {  
+      ':turnIndex': turnIndex
+    }
+  }));
+
+  return turnIndex;
+};
+
+const decRoomTurnIndex = async (roomId) => {
+  const room = await getRoomData(roomId);
+  let turnIndex = room.turnIndex - 1;
+  if(turnIndex < 0) turnIndex = room.turnOrder.length - 1;
 
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
@@ -143,6 +157,10 @@ const incRoomTurnIndex = async (roomId) => {
 };
 
 const removeIDFromTurnOrder = async (room_data, rm_id) => {
+  const idx = room_data.turnOrder.findIndex(id => id == rm_id);
+  if(idx <= room_data.turnIndex)
+    await decRoomTurnIndex(room_data.id);
+
   room_data.turnOrder = room_data.turnOrder.filter(id => id !== rm_id)
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
