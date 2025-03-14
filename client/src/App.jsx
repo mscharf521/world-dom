@@ -716,7 +716,7 @@ export default function App() {
 
   const handleSettingsChange = debounce((newSettings) => {
     sendWSMessage('settings-change', {room, settings:newSettings});
-  }, 100);
+  }, 200);
 
   const scrollToCapital = (lat, lng) => {
     if (mapRef.current) {

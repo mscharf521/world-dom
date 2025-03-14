@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button, TextField, Switch, FormControlLabel, FormGroup, Autocomplete, Chip, Paper, Slider } from '@mui/material'
+import { NumericFormat } from 'react-number-format';
 import { COUNTRIES } from './constants/countries';
 import './RoomPage.css'
 import './font.css'
@@ -80,11 +81,16 @@ export default function RoomPage(props) {
           />
         </div>
         
-        <TextField
-          label="Minimum Population"
-          type="number"
+        <NumericFormat
           value={props.settings?.minPopulation}
-          onChange={(e) => handleSettingChange('minPopulation', parseInt(e.target.value))}
+          thousandSeparator={true}
+          customInput={TextField}
+          label="Minimum Population"
+          type="text"
+          onValueChange={(values) => {
+            console.log("values: ", values);
+            handleSettingChange('minPopulation', parseInt(values.value));
+          }}
           disabled={!props.isLeader}
           className="SettingField"
           size="small"
