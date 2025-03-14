@@ -158,8 +158,9 @@ const decRoomTurnIndex = async (roomId) => {
 
 const removeIDFromTurnOrder = async (room_data, rm_id) => {
   const idx = room_data.turnOrder.findIndex(id => id == rm_id);
-  if(idx <= room_data.turnIndex)
-    await decRoomTurnIndex(room_data.id);
+  if(idx <= room_data.turnIndex) {
+    room_data.turnIndex = await decRoomTurnIndex(room_data.id);
+  }
 
   room_data.turnOrder = room_data.turnOrder.filter(id => id !== rm_id)
   await docClient.send(new UpdateCommand({
