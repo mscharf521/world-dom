@@ -6,12 +6,6 @@ import './Chat.css'
 import './font.css'
 
 export default function Chat(props) {
-  useEffect(() => {
-    if (props.chat.length > 0 && props.hide) {
-      props.setUnreadMessages(prev => prev + 1);
-    }
-  }, [props.chat]);
-
   const renderChat = () => {
     return props.chat.map(({username, message, color}, index) => (
       <div key={index}>
