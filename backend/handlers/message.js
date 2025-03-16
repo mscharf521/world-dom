@@ -20,10 +20,10 @@ const {
 const { checkWinCondition } = require('../utils/wincon');
 const { broadcastToRoom, sendToConnection } = require('../utils/send');
 const { leaveRoom } = require('../utils/leave');
-const { getDistanceFromLatLng } = require('../utils/dst');
 const { SendUpToDateUserData, PrepUsers } = require('../utils/sendusers');
 
 let CONSTANTS = null;
+let getDistanceFromLatLng = null;
 
 const startGame = async (roomId, usersInRoom, connectionId, domainName, stage) => {
   let usersInRoomCopy = [...usersInRoom];
@@ -46,6 +46,7 @@ exports.handler = async (event) => {
   const { connectionId, domainName, stage } = event.requestContext;
 
   if(!CONSTANTS) CONSTANTS = (await import("@world-dom/common/constants.js")).CONSTANTS;
+  if(!getDistanceFromLatLng) getDistanceFromLatLng = (await import("@world-dom/common/dst.js")).getDistanceFromLatLng;
   
   try {
     const payload = JSON.parse(event.body);

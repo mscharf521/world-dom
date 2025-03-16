@@ -27,8 +27,7 @@ import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 import { COUNTRIES } from './constants/countries';
 import MultiUseInfo from "./MultiUseInfo";
 
-import { getDistanceFromLatLng } from "./dst";
-
+import { getDistanceFromLatLng } from "@world-dom/common/dst";
 import { CONSTANTS } from "@world-dom/common/constants";
 
 // WebSocket connection
