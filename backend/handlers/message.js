@@ -21,26 +21,22 @@ const { checkWinCondition } = require('../utils/wincon');
 const { broadcastToRoom, sendToConnection } = require('../utils/send');
 const { leaveRoom } = require('../utils/leave');
 const { getDistanceFromLatLng } = require('../utils/dst');
-const { SendUpToDateUserData } = require('../utils/sendusers');
+const { SendUpToDateUserData, PrepUsers } = require('../utils/sendusers');
 
 let CONSTANTS = null;
 
 const startGame = async (roomId, usersInRoom, connectionId, domainName, stage) => {
-  shuffle(usersInRoom);
-  await setRoomTurnOrder(roomId, usersInRoom.map(user => user.connectionId));
+  let usersInRoomCopy = [...usersInRoom];
+  shuffle(usersInRoomCopy);
+  await setRoomTurnOrder(roomId, usersInRoomCopy.map(user => user.connectionId));
   await broadcastToRoom(
     roomId,
     {
       type: 'next-turn',
       data: {
-        userID: usersInRoom[0].connectionId,
+        userID: usersInRoomCopy[0].connectionId,
         // Pass up to date user data to avoid race conditions in the client
-        users: usersInRoom.map(user => ({
-          username: user.username,
-          connectionId: user.connectionId,
-          caps: user.caps,
-          spies: user.spies
-        }))
+        users: PrepUsers(usersInRoom)
       }
     }, connectionId, domainName, stage, usersInRoom
   );
@@ -279,6 +275,7 @@ exports.handler = async (event) => {
         let usersInRoom = await getUsersInRoom(roomId);
 
         await addBombToRoom(roomId, bomb);
+        await incRoomTurnIndex(roomId);
 
         let room_data = await getRoomData(roomId);
 
@@ -364,27 +361,17 @@ exports.handler = async (event) => {
           if(cap_hit)
           {
             await checkWinCondition(room_data, usersInRoom, domainName, stage);
-  
-            // could improve this by not fetching the room data again?
-            // room_data = await getRoomData(roomId);
           }
         }
-
-        const turnIndex = await incRoomTurnIndex(roomId);
 
         await broadcastToRoom(
           roomId,
           {
             type: 'next-turn',
             data: {
-              userID: room_data.turnOrder[turnIndex],
+              userID: room_data.turnOrder[room_data.turnIndex],
               // Pass up to date user data to avoid race conditions in the client
-              users: usersInRoom.map(user => ({
-                username: user.username,
-                connectionId: user.connectionId,
-                caps: user.caps,
-                spies: user.spies
-              }))
+              users: PrepUsers(usersInRoom)
             }
           },
           connectionId,

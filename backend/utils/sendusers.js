@@ -11,12 +11,7 @@ async function SendUpToDateUserData(roomId, connectionId, domainName, stage, use
       {
         type: 'room-users',
         data: {
-          users: usersInRoom.map(user => ({
-            username: user.username,
-            connectionId: user.connectionId,
-            caps: user.caps,
-            spies: user.spies
-          }))
+          users: PrepUsers(usersInRoom)
         }
       },
       connectionId,
@@ -24,8 +19,18 @@ async function SendUpToDateUserData(roomId, connectionId, domainName, stage, use
       stage,
       usersInRoom
     )
-  }
+}
+
+function PrepUsers(usersInRoom) {
+  return usersInRoom.map(user => ({
+    username: user.username,
+    connectionId: user.connectionId,
+    caps: user.caps,
+    spies: user.spies
+  }))
+}
 
 module.exports = {
-    SendUpToDateUserData
+    SendUpToDateUserData,
+    PrepUsers
 };

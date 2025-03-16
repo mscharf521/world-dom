@@ -29,6 +29,9 @@ async function checkWinCondition(room_data, usersInRoom, domainName, stage)
                   {
                       losing_users.push(user);
                   }
+            } else {
+                // Remove user from turn order that should not be there
+                await removeIDFromTurnOrder(room_data, userID);
             }
         }
 
