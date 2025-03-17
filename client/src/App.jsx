@@ -156,6 +156,9 @@ export default function App() {
     SetShowBombBtns(false);
     SetShowSpyBtns(false);
 
+    SetActiveSpyIdx(-1);
+    // SetActiveBoatIdx(-1);
+
     SetMapZoom(start_zoom);
 
     SetRoom("");
@@ -289,24 +292,26 @@ export default function App() {
               addAlert("It's your turn", null, 3000)
               is_my_turn = true;
 
-              if(settingsRef.current.numberOfSpies > 0) {
-                turn_state = SPY;
-                const my_user = payload.data.users.find(u => u.connectionId === my_connection_id);
-                const first_nondestroyed_spy_idx = my_user.spies.findIndex(spy => !spy.destroyed);
-                if(first_nondestroyed_spy_idx !== -1) {
-                  SetActiveSpyIdx(first_nondestroyed_spy_idx);
-                  SetActiveSpyInfo(my_user.spies[first_nondestroyed_spy_idx].spyinfo);
-                  SetShowSpyBtns(true);
-                } else {
-                  turn_state = BOMB;
-                  SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-                  SetShowBombBtns(true);
-                }
-              } else {
-                turn_state = BOMB;
-                SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-                SetShowBombBtns(true);
-              }
+              handleTurnState();
+
+              // if(settingsRef.current.numberOfSpies > 0) {
+              //   turn_state = SPY;
+              //   const my_user = payload.data.users.find(u => u.connectionId === my_connection_id);
+              //   const first_nondestroyed_spy_idx = my_user.spies.findIndex(spy => !spy.destroyed);
+              //   if(first_nondestroyed_spy_idx !== -1) {
+              //     SetActiveSpyIdx(first_nondestroyed_spy_idx);
+              //     SetActiveSpyInfo(my_user.spies[first_nondestroyed_spy_idx].spyinfo);
+              //     SetShowSpyBtns(true);
+              //   } else {
+              //     turn_state = BOMB;
+              //     SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+              //     SetShowBombBtns(true);
+              //   }
+              // } else {
+              //   turn_state = BOMB;
+              //   SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+              //   SetShowBombBtns(true);
+              // }
             }
             break;
       
@@ -335,17 +340,24 @@ export default function App() {
             SetSettings((current) => ({...current, ...payload.data.settings}));
             break;
 
-        case 'cap-destroy':
-            addAlert(`${payload.data.capInfo.name} was destroyed!`, () => scrollToCapital(payload.data.capInfo.lat, payload.data.capInfo.lng), 5000)
-            break;
+        case 'asset-alert':
+          let onClick = null;
+          if(payload.data.lat && payload.data.lng)
+            onClick = () => scrollToAsset(payload.data.lat, payload.data.lng);
+          addAlert(`${payload.data.alert_message}`, onClick, payload.data.dur || 5000)
+          break;
 
-        case 'spy-destroy':
-            addAlert(`A Spy was destroyed!`, () => scrollToCapital(payload.data.spyinfo.lat, payload.data.spyinfo.lng), 5000)
-            break;
+        // case 'cap-destroy':
+        //     addAlert(`${payload.data.capInfo.name} was destroyed!`, () => scrollToCapital(payload.data.capInfo.lat, payload.data.capInfo.lng), 5000)
+        //     break;
 
-        case 'spy-scan':
-            addAlert(`${payload.data.message}`, () => scrollToCapital(payload.data.lat, payload.data.lng), 5000)
-            break;
+        // case 'spy-destroy':
+        //     addAlert(`A Spy was destroyed!`, () => scrollToCapital(payload.data.spyinfo.lat, payload.data.spyinfo.lng), 5000)
+        //     break;
+
+        // case 'spy-scan':
+        //     addAlert(`${payload.data.message}`, () => scrollToCapital(payload.data.lat, payload.data.lng), 5000)
+        //     break;
       
         default:
             console.log("Unknown message type:", payload);
@@ -663,25 +675,66 @@ export default function App() {
         SetSelectedSpy({});
         SetShowSelSpyMarker(false);
 
-        const my_user = usersRef.current.find(u => u.connectionId === my_connection_id);
-        const next_nondestroyed_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdx && !spy.destroyed);
-        if(next_nondestroyed_spy_idx !== -1) {
-          SetActiveSpyIdx(next_nondestroyed_spy_idx);
-          SetActiveSpyInfo(my_user.spies[next_nondestroyed_spy_idx].spyinfo);
-        } else {
-          SetActiveSpyIdx(-1);
-          SetActiveSpyInfo(null);
-          SetShowSpyBtns(false);
+        handleTurnState();
+
+        // const my_user = usersRef.current.find(u => u.connectionId === my_connection_id);
+        // const next_nondestroyed_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdx && !spy.destroyed);
+        // if(next_nondestroyed_spy_idx !== -1) {
+        //   SetActiveSpyIdx(next_nondestroyed_spy_idx);
+        //   SetActiveSpyInfo(my_user.spies[next_nondestroyed_spy_idx].spyinfo);
+        // } else {
+        //   SetActiveSpyIdx(-1);
+        //   SetActiveSpyInfo(null);
+        //   SetShowSpyBtns(false);
           
-          turn_state = BOMB;
-          SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-          SetShowBombBtns(true);
-        }
+        //   turn_state = BOMB;
+        //   SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+        //   SetShowBombBtns(true);
+        // }
       } else {
         addAlert("Spy can't move that far", null, 2000);
       }
     }
   }
+
+  const handleTurnState = () => {
+    const my_user = usersRef.current.find(u => u.connectionId === my_connection_id);
+
+    if(!my_user) {
+      console.error("Not able to find my user data");
+      return;
+    }
+
+    const next_active_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdx && !spy.destroyed);
+    if(next_active_spy_idx !== -1) {
+      turn_state = SPY;
+      SetActiveSpyIdx(next_nondestroyed_spy_idx);
+      SetActiveSpyInfo(my_user.spies[next_nondestroyed_spy_idx].spyinfo);
+      SetShowSpyBtns(true);
+      return;
+    } 
+
+    SetActiveSpyIdx(-1);
+    SetActiveSpyInfo(null);
+    SetShowSpyBtns(false);
+
+    // const next_nondestroyed_boat_idx = my_user.boats.findIndex((boat, idx) => idx > activeBoatIdx && !boat.destroyed);
+    // if(next_nondestroyed_boat_idx !== -1) {
+    //   turn_state = BOAT;
+    //   SetActiveBoatIdx(next_nondestroyed_spy_idx);
+    //   SetActiveBoatInfo(my_user.boats[next_nondestroyed_boat_idx].boatinfo);
+    //   SetShowBoatBtns(true);
+    //   return;
+    // } 
+
+    // SetActiveBoatIdx(-1);
+    // SetActiveBoatInfo(null);
+    // SetShowBoatBtns(false);
+    
+    turn_state = BOMB;
+    SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+    SetShowBombBtns(true);
+  };
 
   const OnControlChange = (e) => {
     if(is_my_turn)

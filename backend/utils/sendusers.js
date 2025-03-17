@@ -2,8 +2,7 @@ const { getUsersInRoom } = require('./gameData.js');
 const { broadcastToRoom } = require('./send.js');
 
 async function SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom = null) {
-    if(usersInRoom == null)
-    {
+    if(usersInRoom == null) {
       usersInRoom = await getUsersInRoom(roomId);
     }
     await broadcastToRoom(

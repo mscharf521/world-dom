@@ -214,6 +214,7 @@ exports.handler = async (event) => {
           return { statusCode: 400, body: 'Invalid move' };
         }
 
+        /*
         if(move_dst_km <= spy_move_scan_max_radius) {
           for(var user of usersInRoom) {
             for(var cap_index in user.caps) {
@@ -262,10 +263,64 @@ exports.handler = async (event) => {
             }
           }
         }
+        */
+
+        if(move_dst_km <= spy_move_scan_max_radius) {
+          for(var user of usersInRoom) {
+            const assets = [];
+            user.caps.map((cap, cap_index) => {
+              assets.push({
+                scannedBy: cap.scannedBy,
+                index: cap_index,
+                lat: cap.capInfo.lat,
+                lng: cap.capInfo.lng,
+                addScannedBy: addScannedByUserCap,
+                alert_message: "Your spy found an enemy city!"
+              })
+            })
+            user.spies.map((spy, spy_index) => {
+              assets.push({
+                scannedBy: spy.scannedBy,
+                index: spy_index,
+                lat: spy.spyInfo.lat,
+                lng: spy.spyInfo.lng,
+                addScannedBy: addScannedByUserSpies,
+                alert_message: "Your spy found an enemy spy!"
+              })
+            })
+
+            for(let asset of assets) {
+              await ScanForAssets(user.connectionId, asset);
+            }
+          }
+        }
+
+        async function ScanForAssets(asset_connectionId, asset) {
+          if(asset_connectionId === connectionId) return;
+
+          if(!asset.scannedBy?.includes(connectionId)) {
+            const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, asset.lat, asset.lng);
+            if(dst_km <= spy_search_radius) {
+              await asset.addScannedBy(roomId, asset_connectionId, asset.idx, connectionId);
+              await sendToConnection(
+                connectionId,
+                {
+                  type: 'asset-alert',
+                  data: {
+                    alert_message: asset.alert_message,
+                    lat: asset.lat,
+                    lng: asset.lng,
+                    dur: asset.alert_dur || 5000
+                  }
+                }, domainName, stage
+              )
+            }
+          }
+        }
 
         await setSpyInfo(roomId, connectionId, spyIdx, newSpyInfo);
 
-        usersInRoom = await getUsersInRoom(roomId);
+        // usersInRoom = await getUsersInRoom(roomId);
         await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
         return { statusCode: 200, body: 'Spy action complete' };
@@ -285,17 +340,13 @@ exports.handler = async (event) => {
           {
             type: 'bomb-update',
             data: {bombs: room_data.bombs}
-          },
-          connectionId,
-          domainName,
-          stage,
-          usersInRoom
+          }, 
+          connectionId, domainName, stage, usersInRoom
         );
         
-        let cap_hit = false;
-        let spy_hit = false;
+        let asset_types_hit = new Set();
         const destroyedCaps = new Set();
-
+        /*
         for(var user of usersInRoom)
         {
             // Check if any of the user's caps are in the bomb radius
@@ -352,34 +403,88 @@ exports.handler = async (event) => {
               }
             }
         }
+        */
+        for(var user of usersInRoom) {
+          const assets = [];
+          user.caps.map((cap, cap_index) => {
+            assets.push({
+              type: "cap",
+              index: cap_index,
+              lat: cap.capInfo.lat,
+              lng: cap.capInfo.lng,
+              destory: destroyUserCap,
+              alert_message: `${cap.capInfo.name} was destroyed!`,
+              onlyAlertIf: () => { !destroyedCaps.has(asset.name); }, // Dont alert same city more than once
+              onAlert: () => { destroyedCaps.add(asset.name); }
+            })
+          })
+          user.spies.map((spy, spy_index) => {
+            assets.push({
+              type: "spy",
+              index: spy_index,
+              lat: spy.spyInfo.lat,
+              lng: spy.spyInfo.lng,
+              destory: destroyUserSpies,
+              alert_message: `A Spy was destroyed!`
+            })
+          })
 
-        if(cap_hit || spy_hit)
+          for(let asset of assets) {
+            await BombAsset(user.connectionId, asset);
+          }
+        }
+
+        async function BombAsset(asset_connectionId, asset) {
+          const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, asset.lat, asset.lng);
+          if(dst_km <= (bomb.radius / 1000.0) )
+          {
+              await asset.destory(roomId, asset_connectionId, asset.index);
+              asset_types_hit.add(asset.type)
+
+              if(asset.onlyAlertIf && !asset.onlyAlertIf()) return
+              if(asset.onAlert) asset.onAlert();
+
+              await broadcastToRoom(
+                roomId,
+                {
+                  type: 'asset-alert',
+                  data: {
+                    alert_message: asset.alert_message,
+                    lat: asset.lat,
+                    lng: asset.lng,
+                    dur: asset.alert_dur || 5000
+                  }
+                }, connectionId, domainName, stage, usersInRoom
+              );
+          }
+        }
+
+        if(asset_types_hit.size > 0)
         {
           // Get up to date user data
           usersInRoom = await getUsersInRoom(roomId);
           await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
-          if(cap_hit)
+          if(asset_types_hit.has("cap"))
           {
             await checkWinCondition(room_data, usersInRoom, domainName, stage);
           }
         }
 
-        await broadcastToRoom(
-          roomId,
-          {
-            type: 'next-turn',
-            data: {
-              userID: room_data.turnOrder[room_data.turnIndex],
-              // Pass up to date user data to avoid race conditions in the client
-              users: PrepUsers(usersInRoom)
-            }
-          },
-          connectionId,
-          domainName,
-          stage,
-          usersInRoom
-        );
+        if(room_data.turnOrder.length != 0) {
+          await broadcastToRoom(
+            roomId,
+            {
+              type: 'next-turn',
+              data: {
+                userID: room_data.turnOrder[room_data.turnIndex],
+                // Pass up to date user data to avoid race conditions in the client
+                users: PrepUsers(usersInRoom)
+              }
+            },
+            connectionId, domainName, stage, usersInRoom
+          );
+        }
         
         return { statusCode: 200, body: 'Bomb handled' };
       }
@@ -396,9 +501,7 @@ exports.handler = async (event) => {
         await broadcastToRoom(
           roomId,
           { type: 'settings-change-server', data: { settings } },
-          connectionId,
-          domainName,
-          stage
+          connectionId, domainName, stage
         );
 
         return { statusCode: 200, body: 'Settings changed' };

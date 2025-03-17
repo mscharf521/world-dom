@@ -270,8 +270,8 @@ const addScannedByInList = async (roomId, connectionId, list_name, index, scanne
   }));
 };
 
-const destroyUserCap = async (roomId, connectionId, index, scannerId) => {
-  await destroyInList(roomId, connectionId, "caps", index, scannerId);
+const destroyUserCap = async (roomId, connectionId, index) => {
+  await destroyInList(roomId, connectionId, "caps", index);
 };
 const destroyUserSpies = async (roomId, connectionId, index) => {
   await destroyInList(roomId, connectionId, "spies", index);
