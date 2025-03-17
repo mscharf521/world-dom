@@ -183,6 +183,9 @@ export default function App() {
   const usersRef = useRef(users);
   useEffect(() => {usersRef.current = users})
 
+  const activeSpyIdxRef = useRef(activeSpyIdx);
+  useEffect(() => {activeSpyIdxRef.current = activeSpyIdx})
+
   const ctrlRef = useRef(CityInfoControl);
   useEffect(() => {ctrlRef.current = CityInfoControl})
 
@@ -292,26 +295,7 @@ export default function App() {
               addAlert("It's your turn", null, 3000)
               is_my_turn = true;
 
-              handleTurnState();
-
-              // if(settingsRef.current.numberOfSpies > 0) {
-              //   turn_state = SPY;
-              //   const my_user = payload.data.users.find(u => u.connectionId === my_connection_id);
-              //   const first_nondestroyed_spy_idx = my_user.spies.findIndex(spy => !spy.destroyed);
-              //   if(first_nondestroyed_spy_idx !== -1) {
-              //     SetActiveSpyIdx(first_nondestroyed_spy_idx);
-              //     SetActiveSpyInfo(my_user.spies[first_nondestroyed_spy_idx].spyinfo);
-              //     SetShowSpyBtns(true);
-              //   } else {
-              //     turn_state = BOMB;
-              //     SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-              //     SetShowBombBtns(true);
-              //   }
-              // } else {
-              //   turn_state = BOMB;
-              //   SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-              //   SetShowBombBtns(true);
-              // }
+              handleTurnState(payload.data.users);
             }
             break;
       
@@ -343,21 +327,9 @@ export default function App() {
         case 'asset-alert':
           let onClick = null;
           if(payload.data.lat && payload.data.lng)
-            onClick = () => scrollToAsset(payload.data.lat, payload.data.lng);
+            onClick = () => scrollToLoc(payload.data.lat, payload.data.lng);
           addAlert(`${payload.data.alert_message}`, onClick, payload.data.dur || 5000)
           break;
-
-        // case 'cap-destroy':
-        //     addAlert(`${payload.data.capInfo.name} was destroyed!`, () => scrollToCapital(payload.data.capInfo.lat, payload.data.capInfo.lng), 5000)
-        //     break;
-
-        // case 'spy-destroy':
-        //     addAlert(`A Spy was destroyed!`, () => scrollToCapital(payload.data.spyinfo.lat, payload.data.spyinfo.lng), 5000)
-        //     break;
-
-        // case 'spy-scan':
-        //     addAlert(`${payload.data.message}`, () => scrollToCapital(payload.data.lat, payload.data.lng), 5000)
-        //     break;
       
         default:
             console.log("Unknown message type:", payload);
@@ -675,41 +647,26 @@ export default function App() {
         SetSelectedSpy({});
         SetShowSelSpyMarker(false);
 
-        handleTurnState();
-
-        // const my_user = usersRef.current.find(u => u.connectionId === my_connection_id);
-        // const next_nondestroyed_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdx && !spy.destroyed);
-        // if(next_nondestroyed_spy_idx !== -1) {
-        //   SetActiveSpyIdx(next_nondestroyed_spy_idx);
-        //   SetActiveSpyInfo(my_user.spies[next_nondestroyed_spy_idx].spyinfo);
-        // } else {
-        //   SetActiveSpyIdx(-1);
-        //   SetActiveSpyInfo(null);
-        //   SetShowSpyBtns(false);
-          
-        //   turn_state = BOMB;
-        //   SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
-        //   SetShowBombBtns(true);
-        // }
+        handleTurnState(usersRef.current);
       } else {
         addAlert("Spy can't move that far", null, 2000);
       }
     }
   }
 
-  const handleTurnState = () => {
-    const my_user = usersRef.current.find(u => u.connectionId === my_connection_id);
+  const handleTurnState = (_users) => {
+    const my_user = _users.find(u => u.connectionId === my_connection_id);
 
     if(!my_user) {
       console.error("Not able to find my user data");
       return;
     }
 
-    const next_active_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdx && !spy.destroyed);
+    const next_active_spy_idx = my_user.spies.findIndex((spy, idx) => idx > activeSpyIdxRef.current && !spy.destroyed);
     if(next_active_spy_idx !== -1) {
       turn_state = SPY;
-      SetActiveSpyIdx(next_nondestroyed_spy_idx);
-      SetActiveSpyInfo(my_user.spies[next_nondestroyed_spy_idx].spyinfo);
+      SetActiveSpyIdx(next_active_spy_idx);
+      SetActiveSpyInfo(my_user.spies[next_active_spy_idx].spyinfo);
       SetShowSpyBtns(true);
       return;
     } 
@@ -718,11 +675,11 @@ export default function App() {
     SetActiveSpyInfo(null);
     SetShowSpyBtns(false);
 
-    // const next_nondestroyed_boat_idx = my_user.boats.findIndex((boat, idx) => idx > activeBoatIdx && !boat.destroyed);
-    // if(next_nondestroyed_boat_idx !== -1) {
+    // const next_active_boat_idx = my_user.boats.findIndex((boat, idx) => idx > activeBoatIdx && !boat.destroyed);
+    // if(next_active_boat_idx !== -1) {
     //   turn_state = BOAT;
-    //   SetActiveBoatIdx(next_nondestroyed_spy_idx);
-    //   SetActiveBoatInfo(my_user.boats[next_nondestroyed_boat_idx].boatinfo);
+    //   SetActiveBoatIdx(next_active_boat_idx);
+    //   SetActiveBoatInfo(my_user.boats[next_active_boat_idx].boatinfo);
     //   SetShowBoatBtns(true);
     //   return;
     // } 
@@ -770,7 +727,7 @@ export default function App() {
     sendWSMessage('settings-change', {room, settings:newSettings});
   }, 200);
 
-  const scrollToCapital = (lat, lng) => {
+  const scrollToLoc = (lat, lng) => {
     if (mapRef.current) {
       mapRef.current.panTo({ lat, lng });
       mapRef.current.setZoom(8);
@@ -790,7 +747,7 @@ export default function App() {
     if(showAsset(cap.destroyed, user)) {
       return capMarker(cap, GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
     } else if (showScannedAsset(cap.destroyed, cap.scannedBy, user)) {
-      return capMarker(cap, "Gray", index);
+      return capMarker(cap, "Black", index);
     }
   };
 
@@ -798,7 +755,7 @@ export default function App() {
     if(showAsset(spy.destroyed, user)) {
       return spyMarker(spy, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
     } else if (showScannedAsset(spy.destroyed, spy.scannedBy, user)) {
-      return spyMarker(spy, colorOvrd ?? "Gray", index);
+      return spyMarker(spy, colorOvrd ?? "Black", index);
     }
   }
 
@@ -1074,7 +1031,7 @@ export default function App() {
           curTurnActive={curTurnID === user.connectionId} 
           color_class={GetColorBackgroundClass(GetPlayerColorIdx(user.connectionId))} 
           css_color={GetCSSColor(GetPlayerColorIdx(user.connectionId))}
-          onCapClick={scrollToCapital}
+          onCapClick={scrollToLoc}
           my_board={user.connectionId === my_connection_id}
         />
       ))}

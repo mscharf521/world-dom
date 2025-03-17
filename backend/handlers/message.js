@@ -214,76 +214,29 @@ exports.handler = async (event) => {
           return { statusCode: 400, body: 'Invalid move' };
         }
 
-        /*
         if(move_dst_km <= spy_move_scan_max_radius) {
           for(var user of usersInRoom) {
-            for(var cap_index in user.caps) {
-              if(user.connectionId === connectionId) continue;
+            if(user.connectionId === connectionId) continue;
 
-              const cap = user.caps[cap_index];
-              if(!cap.scannedBy?.includes(connectionId)) {
-                const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, cap.capinfo.lat, cap.capinfo.lng);
-                if(dst_km <= spy_search_radius) {
-                  await addScannedByUserCap(roomId, user.connectionId, cap_index, connectionId);
-                  await sendToConnection(
-                    connectionId,
-                    {
-                      type: 'spy-scan',
-                      data: {
-                        message: `Your spy found an enemy city!`,
-                        lat: cap.capinfo.lat,
-                        lng: cap.capinfo.lng
-                      }
-                    }, domainName, stage
-                  )
-                }
-              }
-            }
-            for(var spy_index in user.spies) {
-              if(user.connectionId === connectionId) continue;
-
-              const spy = user.spies[spy_index];
-              if(!spy.scannedBy?.includes(connectionId)) {
-                const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, spy.spyinfo.lat, spy.spyinfo.lng);
-                if(dst_km <= spy_search_radius) {
-                  await addScannedByUserSpies(roomId, user.connectionId, spy_index, connectionId);
-                  await sendToConnection(
-                    connectionId,
-                    {
-                      type: 'spy-scan',
-                      data: {
-                        message: `Your spy found an enemy spy!`,
-                        lat: spy.spyinfo.lat,
-                        lng: spy.spyinfo.lng
-                      }
-                    }, domainName, stage
-                  )
-                }
-              }
-            }
-          }
-        }
-        */
-
-        if(move_dst_km <= spy_move_scan_max_radius) {
-          for(var user of usersInRoom) {
             const assets = [];
             user.caps.map((cap, cap_index) => {
               assets.push({
+                destroyed: cap.destroyed,
                 scannedBy: cap.scannedBy,
                 index: cap_index,
-                lat: cap.capInfo.lat,
-                lng: cap.capInfo.lng,
+                lat: cap.capinfo.lat,
+                lng: cap.capinfo.lng,
                 addScannedBy: addScannedByUserCap,
                 alert_message: "Your spy found an enemy city!"
               })
             })
             user.spies.map((spy, spy_index) => {
               assets.push({
+                destroyed: spy.destroyed,
                 scannedBy: spy.scannedBy,
                 index: spy_index,
-                lat: spy.spyInfo.lat,
-                lng: spy.spyInfo.lng,
+                lat: spy.spyinfo.lat,
+                lng: spy.spyinfo.lng,
                 addScannedBy: addScannedByUserSpies,
                 alert_message: "Your spy found an enemy spy!"
               })
@@ -296,31 +249,30 @@ exports.handler = async (event) => {
         }
 
         async function ScanForAssets(asset_connectionId, asset) {
-          if(asset_connectionId === connectionId) return;
+          if(asset.destroyed) return;
+          if(asset.scannedBy?.includes(connectionId)) return;
 
-          if(!asset.scannedBy?.includes(connectionId)) {
-            const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, asset.lat, asset.lng);
-            if(dst_km <= spy_search_radius) {
-              await asset.addScannedBy(roomId, asset_connectionId, asset.idx, connectionId);
-              await sendToConnection(
-                connectionId,
-                {
-                  type: 'asset-alert',
-                  data: {
-                    alert_message: asset.alert_message,
-                    lat: asset.lat,
-                    lng: asset.lng,
-                    dur: asset.alert_dur || 5000
-                  }
-                }, domainName, stage
-              )
-            }
+          const dst_km = getDistanceFromLatLng(newSpyInfo.lat, newSpyInfo.lng, asset.lat, asset.lng);
+          if(dst_km <= spy_search_radius) {
+            await asset.addScannedBy(roomId, asset_connectionId, asset.index, connectionId);
+            await sendToConnection(
+              connectionId,
+              {
+                type: 'asset-alert',
+                data: {
+                  alert_message: asset.alert_message,
+                  lat: asset.lat,
+                  lng: asset.lng,
+                  dur: asset.alert_dur || 5000
+                }
+              }, domainName, stage
+            )
           }
         }
 
         await setSpyInfo(roomId, connectionId, spyIdx, newSpyInfo);
 
-        // usersInRoom = await getUsersInRoom(roomId);
+        usersInRoom = await getUsersInRoom(roomId);
         await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
         return { statusCode: 200, body: 'Spy action complete' };
@@ -346,84 +298,29 @@ exports.handler = async (event) => {
         
         let asset_types_hit = new Set();
         const destroyedCaps = new Set();
-        /*
-        for(var user of usersInRoom)
-        {
-            // Check if any of the user's caps are in the bomb radius
-            for(var cap_index in user.caps)
-            {
-                const cap = user.caps[cap_index]; 
-                if(!cap.destroyed)
-                {
-                    const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, cap.capinfo.lat, cap.capinfo.lng);
-                    if(dst_km <= (bomb.radius / 1000.0) )
-                    {
-                        await destroyUserCap(roomId, user.connectionId, cap_index);
-                        cap_hit = true;
-
-                        if (!destroyedCaps.has(cap.capinfo.name)) {  
-                            destroyedCaps.add(cap.capinfo.name);
-
-                            await broadcastToRoom(
-                              roomId,
-                              {
-                                type: 'cap-destroy',
-                                data: {
-                                  capInfo: cap.capinfo
-                                }
-                              }, connectionId, domainName, stage, usersInRoom
-                            );
-                        }
-                    }
-                }
-            }
-
-            // Check if any of the user's spies are in the bomb radius
-            for (var spy_index in user.spies)
-            {
-              const spy = user.spies[spy_index];
-              if(!spy.destroyed)
-              {
-                const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, spy.spyinfo.lat, spy.spyinfo.lng);
-                if(dst_km <= (bomb.radius / 1000.0) )
-                {
-                  await destroyUserSpies(roomId, user.connectionId, spy_index);
-                  spy_hit = true;
-
-                  await broadcastToRoom(
-                    roomId,
-                    {
-                      type: 'spy-destroy',
-                      data: {
-                        spyinfo: spy.spyinfo
-                      }
-                    }, connectionId, domainName, stage, usersInRoom
-                  );
-                }
-              }
-            }
-        }
-        */
+        
         for(var user of usersInRoom) {
           const assets = [];
           user.caps.map((cap, cap_index) => {
             assets.push({
               type: "cap",
+              destroyed: cap.destroyed,
               index: cap_index,
-              lat: cap.capInfo.lat,
-              lng: cap.capInfo.lng,
+              lat: cap.capinfo.lat,
+              lng: cap.capinfo.lng,
               destory: destroyUserCap,
-              alert_message: `${cap.capInfo.name} was destroyed!`,
-              onlyAlertIf: () => { !destroyedCaps.has(asset.name); }, // Dont alert same city more than once
-              onAlert: () => { destroyedCaps.add(asset.name); }
+              alert_message: `${cap.capinfo.name} was destroyed!`,
+              onlyAlertIf: () => { !destroyedCaps.has(cap.capinfo.name); }, // Dont alert same city more than once
+              onAlert: () => { destroyedCaps.add(cap.capinfo.name); }
             })
           })
           user.spies.map((spy, spy_index) => {
             assets.push({
               type: "spy",
+              destroyed: spy.destroyed,
               index: spy_index,
-              lat: spy.spyInfo.lat,
-              lng: spy.spyInfo.lng,
+              lat: spy.spyinfo.lat,
+              lng: spy.spyinfo.lng,
               destory: destroyUserSpies,
               alert_message: `A Spy was destroyed!`
             })
@@ -435,9 +332,10 @@ exports.handler = async (event) => {
         }
 
         async function BombAsset(asset_connectionId, asset) {
+          if(asset.destroyed) return;
+
           const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, asset.lat, asset.lng);
-          if(dst_km <= (bomb.radius / 1000.0) )
-          {
+          if(dst_km <= (bomb.radius / 1000.0) ) {
               await asset.destory(roomId, asset_connectionId, asset.index);
               asset_types_hit.add(asset.type)
 
@@ -459,14 +357,12 @@ exports.handler = async (event) => {
           }
         }
 
-        if(asset_types_hit.size > 0)
-        {
+        if(asset_types_hit.size > 0) {
           // Get up to date user data
           usersInRoom = await getUsersInRoom(roomId);
           await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
-          if(asset_types_hit.has("cap"))
-          {
+          if(asset_types_hit.has("cap")) {
             await checkWinCondition(room_data, usersInRoom, domainName, stage);
           }
         }
