@@ -58,10 +58,10 @@ export default function RoomPage(props) {
   const countryOptions = Object.keys(COUNTRIES);
 
   return <div className="RoomPage">
-    <h1>Room: {props.room}</h1>
+    <h1 className="RoomSettingsHeader">Room: {props.room}</h1>
     
     <Paper elevation={3} className="RoomSettings">
-      <h2>Room Settings</h2>
+      <h2 className="RoomSettingsHeader">Room Settings</h2>
       <FormGroup>
         <div className="SettingField">
           <label>Number of Cities: {props.settings?.numberOfCapitals}</label>
@@ -205,7 +205,7 @@ export default function RoomPage(props) {
       </FormGroup>
     </Paper>
 
-    <h2>Players</h2>
+    <h2 className="RoomSettingsHeader">Players</h2>
     <div className="PlayerList">
       {renderUsers()}
     </div>

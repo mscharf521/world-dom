@@ -36,7 +36,6 @@ export default function StartingPage(props) {
     <div className="StartPage-background">
       <div className="HomePage">
         <img className="logo" src={"/icons/icon-300x300.png"} alt="World Domination"/>
-        {false && <h1 className="title">WORLD DOMINATION</h1>}
 
         <form className="HomePageForm" onSubmit={props.OnSubmit}>
           <TextField 
