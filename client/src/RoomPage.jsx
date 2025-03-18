@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Button, TextField, Switch, FormControlLabel, FormGroup, Autocomplete, Chip, Paper, Slider } from '@mui/material'
+import { Button, TextField, Switch, FormControlLabel, FormGroup, Autocomplete, Chip, Paper, Slider, IconButton } from '@mui/material'
 import { NumericFormat } from 'react-number-format';
 import { COUNTRIES } from './constants/countries';
+import { Add, Remove } from '@mui/icons-material';
 import './RoomPage.css'
 import './font.css'
 
@@ -63,30 +64,50 @@ export default function RoomPage(props) {
     <Paper elevation={3} className="RoomSettings">
       <h2 className="RoomSettingsHeader">Room Settings</h2>
       <FormGroup>
-        <div className="SettingField">
-          <label>Number of Cities: {props.settings?.numberOfCapitals}</label>
-          <Slider
-            value={props.settings?.numberOfCapitals}
-            onChange={(e, newValue) => handleSettingChange('numberOfCapitals', newValue)}
-            min={1}
-            max={10}
-            step={1}
-            disabled={!props.isLeader}
-          />
+        <div className="SettingsRow">
+          <div className="SettingColumn">
+            <h3>Cities</h3>
+            <div className="ButtonGroup">
+              <IconButton
+                onClick={() => handleSettingChange('numberOfCapitals', Math.max(1, (props.settings?.numberOfCapitals || 1) - 1))}
+                disabled={!props.isLeader || props.settings?.numberOfCapitals <= 1}
+                color="primary"
+              >
+                <Remove />
+              </IconButton>
+              <span>{props.settings?.numberOfCapitals}</span>
+              <IconButton
+                onClick={() => handleSettingChange('numberOfCapitals', Math.min(10, (props.settings?.numberOfCapitals || 1) + 1))}
+                disabled={!props.isLeader || props.settings?.numberOfCapitals >= 10}
+                color="primary"
+              >
+                <Add />
+              </IconButton>
+            </div>
+          </div>
+
+          <div className="SettingColumn">
+            <h3>Spies</h3>
+            <div className="ButtonGroup">
+              <IconButton
+                onClick={() => handleSettingChange('numberOfSpies', Math.max(0, (props.settings?.numberOfSpies || 0) - 1))}
+                disabled={!props.isLeader || props.settings?.numberOfSpies <= 0}
+                color="primary"
+              >
+                <Remove />
+              </IconButton>
+              <span>{props.settings?.numberOfSpies}</span>
+              <IconButton
+                onClick={() => handleSettingChange('numberOfSpies', Math.min(10, (props.settings?.numberOfSpies || 0) + 1))}
+                disabled={!props.isLeader || props.settings?.numberOfSpies >= 10}
+                color="primary"
+              >
+                <Add />
+              </IconButton>
+            </div>
+          </div>
         </div>
-        
-        <div className="SettingField">
-          <label>Number of Spies: {props.settings?.numberOfSpies}</label>
-          <Slider
-            value={props.settings?.numberOfSpies}
-            onChange={(e, newValue) => handleSettingChange('numberOfSpies', newValue)}
-            min={0}
-            max={10}
-            step={1}
-            disabled={!props.isLeader}
-          />
-        </div>
-        
+
         <div className="SettingField">
           <NumericFormat
             value={props.settings?.minPopulation}
