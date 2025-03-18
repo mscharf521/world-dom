@@ -40,12 +40,14 @@ let my_connection_id = null;
 const PREGAME = 0;
 const CAPSEL = 1;
 const SPYSEL = 2;
-const WAIT = 3;
-const GAME = 4;
+const BOATSEL = 3;
+const WAIT = 4;
+const GAME = 5;
 
 // Turn states
 const SPY = 0;
-const BOMB = 1;
+const BOAT = 1;
+const BOMB = 2;
 
 let game_state = PREGAME;
 let turn_state = BOMB;
@@ -331,6 +333,12 @@ export default function App() {
             onClick = () => scrollToLoc(payload.data.lat, payload.data.lng);
           addAlert(`${payload.data.alert_message}`, onClick, payload.data.dur || 5000)
           break;
+
+        case 'boat-sonar':
+          const unit = "km"; //preferencesRef.current.units == "metric" ? "km" : "miles"
+          addAlert(`Your boat found an enemy asset ${payload.data.dst} ${unit} from its position`, null, 10000)
+          break;
+
       
         default:
             console.log("Unknown message type:", payload);
@@ -597,8 +605,14 @@ export default function App() {
     {
       sendWSMessage("spy-sel", {room, spies:spy_buffer});
       spy_buffer = [];
-      game_state = WAIT;
-      SetInfoText({show: true, text:"Waiting for other players"})
+
+      if(settingsRef.current.numberOfBoats > 0) {
+        game_state = BOATSEL;
+        SetInfoText({show: true, text:`Place ${settingsRef.current.numberOfBoats} More Boat${settingsRef.current.numberOfBoats > 1 ? 's' : ''}`})
+      } else {
+        game_state = WAIT;
+        SetInfoText({show: true, text:"Waiting for other players"})
+      }
     } else {
       let rem_spy_count = settingsRef.current.numberOfSpies - spy_buffer.length;
       SetInfoText({
@@ -609,6 +623,28 @@ export default function App() {
     SetSelectedSpy({});
     SetShowSelBtn(false);
     SetShowSelSpyMarker(false);
+  };
+
+  const onSelBoats = e => {
+    e.preventDefault();
+    boat_buffer.push({boatinfo:selectedBoat, destroyed: false, scannedBy: []});
+    if(boat_buffer.length === settingsRef.current.numberOfBoats)
+    {
+      sendWSMessage("boat-sel", {room, boats:boat_buffer});
+      boat_buffer = [];
+
+      game_state = WAIT;
+      SetInfoText({show: true, text:"Waiting for other players"})
+    } else {
+      let rem_boat_count = settingsRef.current.numberOfBoats - boat_buffer.length;
+      SetInfoText({
+        show: true, 
+        text: `Place ${rem_boat_count} More Boat${rem_boat_count > 1 ? 's' : ''}`
+      });
+    }
+    SetSelectedBoat({});
+    SetShowSelBtn(false);
+    SetShowSelBoatMarker(false);
   };
 
   const onLaunch = e => {

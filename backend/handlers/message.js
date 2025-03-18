@@ -169,10 +169,7 @@ exports.handler = async (event) => {
         // Only check if we need to start the game if we do not have spies
         if(room_data.settings.numberOfSpies <= 0) {
           let done = usersInRoom.reduce((acc, user) => acc && user.caps.length > 0, true);
-          if(done)
-          {
-            await startGame(roomId, usersInRoom, connectionId, domainName, stage);
-          }
+          if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
         }
         return { statusCode: 200, body: 'Capitals selected' };
       }
@@ -185,10 +182,27 @@ exports.handler = async (event) => {
         const usersInRoom = await getUsersInRoom(roomId);
         await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
-        let done = usersInRoom.reduce((acc, user) => acc && user.spies.length > 0, true);
-        if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
+        // Only check if we need to start the game if we do not have boats
+        if(room_data.settings.numberOfBoats <= 0) {
+          let done = usersInRoom.reduce((acc, user) => acc && user.spies.length > 0, true);
+          if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
+        }
 
         return { statusCode: 200, body: 'Spies selected' };
+      }
+
+      case 'boat-sel': {
+        const { room: roomId, boats } = data;
+
+        await setUserBoats(roomId, connectionId, boats);
+
+        const usersInRoom = await getUsersInRoom(roomId);
+        await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
+
+        let done = usersInRoom.reduce((acc, user) => acc && user.boats.length > 0, true);
+        if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
+
+        return { statusCode: 200, body: 'Boats selected' };
       }
 
       case 'client-spy': {
@@ -241,6 +255,17 @@ exports.handler = async (event) => {
                 alert_message: "Your spy found an enemy spy!"
               })
             })
+            user.boats.map((boat, boat_index) => {
+              assets.push({
+                destroyed: boat.destroyed,
+                scannedBy: boat.scannedBy,
+                index: boat_index,
+                lat: boat.boatinfo.lat,
+                lng: boat.boatinfo.lng,
+                addScannedBy: addScannedByUserBoats,
+                alert_message: "Your spy found an enemy boat!"
+              })
+            })
 
             for(let asset of assets) {
               await ScanForAssets(user.connectionId, asset);
@@ -278,6 +303,114 @@ exports.handler = async (event) => {
         return { statusCode: 200, body: 'Spy action complete' };
       }
 
+      case 'client-boat': {
+        const { room: roomId, boatIdx, action, newBoatInfo } = data;
+        let usersInRoom = await getUsersInRoom(roomId);
+
+        const move_max_radius = CONSTANTS.boat_move_max_radius;
+        const bomb_range_max_radius = CONSTANTS.boat_bomb_range_max_radius;
+        const bomb_radius = CONSTANTS.boat_bomb_radius;
+
+        const act_user = usersInRoom.find(user => user.connectionId === connectionId);
+        if (!act_user) {
+          return { statusCode: 400, body: 'User not found' };
+        }
+
+        const act_boat = act_user.boats[boatIdx];
+        if (!act_boat || act_boat.destroyed) {
+          return { statusCode: 400, body: 'Invalid Boat' };
+        }
+
+        switch(action) {
+          case "move": {
+            const move_dst_km = getDistanceFromLatLng(act_boat.boatinfo.lat, act_boat.boatinfo.lng, newBoatInfo.lat, newBoatInfo.lng);
+            if(move_dst_km > move_max_radius) {
+              return { statusCode: 400, body: 'Invalid move' };
+            }
+
+            await setBoatInfo(roomId, connectionId, boatIdx, newBoatInfo);
+            break;
+          }
+          case "sonar": {
+            const dstToClosestNondestroyedAsset = Number.MAX_VALUE;
+            for(var user of usersInRoom) {
+              if(user.connectionId === connectionId) continue;
+  
+              const assets = [];
+              user.caps.map((cap, cap_index) => {
+                assets.push({
+                  destroyed: cap.destroyed,
+                  index: cap_index,
+                  lat: cap.capinfo.lat,
+                  lng: cap.capinfo.lng,
+                })
+              })
+              user.spies.map((spy, spy_index) => {
+                assets.push({
+                  destroyed: spy.destroyed,
+                  index: spy_index,
+                  lat: spy.spyinfo.lat,
+                  lng: spy.spyinfo.lng,
+                })
+              })
+              user.boats.map((boat, boat_index) => {
+                assets.push({
+                  destroyed: boat.destroyed,
+                  index: boat_index,
+                  lat: boat.boatinfo.lat,
+                  lng: boat.boatinfo.lng,
+                })
+              })
+  
+              for(let asset of assets) {
+                dstToClosestNondestroyedAsset = Math.min(
+                  dstToClosestNondestroyedAsset,
+                  getDistanceFromLatLng(asset.lat, asset.lng, act_boat.boatinfo.lat, act_boat.boatinfo.lng)
+                );
+                await sendToConnection(
+                  connectionId,
+                  { type: 'boat-sonar', data: { dst: Math.round(dstToClosestNondestroyedAsset) } }, 
+                  domainName, stage
+                )
+              }
+            }
+            break;
+          }
+          case "bomb": {
+            let usersInRoom = await getUsersInRoom(roomId);
+
+            await addBombToRoom(roomId, bomb);
+
+            let room_data = await getRoomData(roomId);
+
+            await broadcastToRoom(
+              roomId,
+              {
+                type: 'bomb-update',
+                data: {bombs: room_data.bombs}
+              }, 
+              connectionId, domainName, stage, usersInRoom
+            );
+            
+            await CheckBombHitAssets(
+              bomb, 
+              connectionId, 
+              roomId, 
+              room_data, 
+              usersInRoom, 
+              domainName, 
+              stage
+            );
+            break;
+          }
+        }
+
+        usersInRoom = await getUsersInRoom(roomId);
+        await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
+
+        return { statusCode: 200, body: 'Boat action complete' };
+      }
+
       case 'client-bomb': {
         const { room: roomId, bomb } = data;
         let usersInRoom = await getUsersInRoom(roomId);
@@ -296,76 +429,15 @@ exports.handler = async (event) => {
           connectionId, domainName, stage, usersInRoom
         );
         
-        let asset_types_hit = new Set();
-        const destroyedCaps = new Set();
-        
-        for(var user of usersInRoom) {
-          const assets = [];
-          user.caps.map((cap, cap_index) => {
-            assets.push({
-              type: "cap",
-              destroyed: cap.destroyed,
-              index: cap_index,
-              lat: cap.capinfo.lat,
-              lng: cap.capinfo.lng,
-              destory: destroyUserCap,
-              alert_message: `${cap.capinfo.name} was destroyed!`,
-              onlyAlertIf: () => { !destroyedCaps.has(cap.capinfo.name); }, // Dont alert same city more than once
-              onAlert: () => { destroyedCaps.add(cap.capinfo.name); }
-            })
-          })
-          user.spies.map((spy, spy_index) => {
-            assets.push({
-              type: "spy",
-              destroyed: spy.destroyed,
-              index: spy_index,
-              lat: spy.spyinfo.lat,
-              lng: spy.spyinfo.lng,
-              destory: destroyUserSpies,
-              alert_message: `A Spy was destroyed!`
-            })
-          })
-
-          for(let asset of assets) {
-            await BombAsset(user.connectionId, asset);
-          }
-        }
-
-        async function BombAsset(asset_connectionId, asset) {
-          if(asset.destroyed) return;
-
-          const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, asset.lat, asset.lng);
-          if(dst_km <= (bomb.radius / 1000.0) ) {
-              await asset.destory(roomId, asset_connectionId, asset.index);
-              asset_types_hit.add(asset.type)
-
-              if(asset.onlyAlertIf && !asset.onlyAlertIf()) return
-              if(asset.onAlert) asset.onAlert();
-
-              await broadcastToRoom(
-                roomId,
-                {
-                  type: 'asset-alert',
-                  data: {
-                    alert_message: asset.alert_message,
-                    lat: asset.lat,
-                    lng: asset.lng,
-                    dur: asset.alert_dur || 5000
-                  }
-                }, connectionId, domainName, stage, usersInRoom
-              );
-          }
-        }
-
-        if(asset_types_hit.size > 0) {
-          // Get up to date user data
-          usersInRoom = await getUsersInRoom(roomId);
-          await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
-
-          if(asset_types_hit.has("cap")) {
-            await checkWinCondition(room_data, usersInRoom, domainName, stage);
-          }
-        }
+        await CheckBombHitAssets(
+          bomb, 
+          connectionId, 
+          roomId, 
+          room_data, 
+          usersInRoom, 
+          domainName, 
+          stage
+        );
 
         if(room_data.turnOrder.length != 0) {
           await broadcastToRoom(
@@ -429,4 +501,77 @@ function shuffle(array) {
   }
 
   return array;
+}
+
+async function CheckBombHitAssets(bomb, connectionId, roomId, room_data, usersInRoom, domainName, stage) {
+  let asset_types_hit = new Set();
+  const destroyedCaps = new Set();
+  
+  for(var user of usersInRoom) {
+    const assets = [];
+    user.caps.map((cap, cap_index) => {
+      assets.push({
+        type: "cap",
+        destroyed: cap.destroyed,
+        index: cap_index,
+        lat: cap.capinfo.lat,
+        lng: cap.capinfo.lng,
+        destory: destroyUserCap,
+        alert_message: `${cap.capinfo.name} was destroyed!`,
+        onlyAlertIf: () => { !destroyedCaps.has(cap.capinfo.name); }, // Dont alert same city more than once
+        onAlert: () => { destroyedCaps.add(cap.capinfo.name); }
+      })
+    })
+    user.spies.map((spy, spy_index) => {
+      assets.push({
+        type: "spy",
+        destroyed: spy.destroyed,
+        index: spy_index,
+        lat: spy.spyinfo.lat,
+        lng: spy.spyinfo.lng,
+        destory: destroyUserSpies,
+        alert_message: `A Spy was destroyed!`
+      })
+    })
+
+    for(let asset of assets) {
+      await BombAsset(user.connectionId, asset);
+    }
+  }
+
+  async function BombAsset(asset_connectionId, asset) {
+    if(asset.destroyed) return;
+
+    const dst_km = getDistanceFromLatLng(bomb.center.lat, bomb.center.lng, asset.lat, asset.lng);
+    if(dst_km <= (bomb.radius / 1000.0) ) {
+        await asset.destory(roomId, asset_connectionId, asset.index);
+        asset_types_hit.add(asset.type)
+
+        if(asset.onlyAlertIf && !asset.onlyAlertIf()) return
+        if(asset.onAlert) asset.onAlert();
+
+        await broadcastToRoom(
+          roomId,
+          {
+            type: 'asset-alert',
+            data: {
+              alert_message: asset.alert_message,
+              lat: asset.lat,
+              lng: asset.lng,
+              dur: asset.alert_dur || 5000
+            }
+          }, connectionId, domainName, stage, usersInRoom
+        );
+    }
+  }
+
+  if(asset_types_hit.size > 0) {
+    // Get up to date user data
+    usersInRoom = await getUsersInRoom(roomId);
+    await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
+
+    if(asset_types_hit.has("cap")) {
+      await checkWinCondition(room_data, usersInRoom, domainName, stage);
+    }
+  }
 }
