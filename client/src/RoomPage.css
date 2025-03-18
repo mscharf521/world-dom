@@ -78,6 +78,10 @@
   flex: 1;
 }
 
+.SettingColumn h3 {
+  margin: 0px;
+}
+
 .ButtonGroup span {
   font-size: 1.2rem;
   font-weight: bold;
