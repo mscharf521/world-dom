@@ -164,9 +164,9 @@ exports.handler = async (event) => {
         const usersInRoom = await getUsersInRoom(roomId);
         await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
-        const room_data = await getRoomData(roomId);
-
+        
         // Only check if we need to start the game if we do not have spies
+        const room_data = await getRoomData(roomId);
         if(room_data.settings.numberOfSpies <= 0) {
           let done = usersInRoom.reduce((acc, user) => acc && user.caps.length > 0, true);
           if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
@@ -183,6 +183,7 @@ exports.handler = async (event) => {
         await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
         // Only check if we need to start the game if we do not have boats
+        const room_data = await getRoomData(roomId);
         if(room_data.settings.numberOfBoats <= 0) {
           let done = usersInRoom.reduce((acc, user) => acc && user.spies.length > 0, true);
           if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
@@ -392,7 +393,7 @@ exports.handler = async (event) => {
               connectionId, domainName, stage, usersInRoom
             );
             
-            await CheckBombHitAssets(
+            usersInRoom = await CheckBombHitAssets(
               bomb, 
               connectionId, 
               roomId, 
@@ -404,9 +405,6 @@ exports.handler = async (event) => {
             break;
           }
         }
-
-        usersInRoom = await getUsersInRoom(roomId);
-        await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
 
         return { statusCode: 200, body: 'Boat action complete' };
       }
@@ -429,7 +427,7 @@ exports.handler = async (event) => {
           connectionId, domainName, stage, usersInRoom
         );
         
-        await CheckBombHitAssets(
+        usersInRoom = await CheckBombHitAssets(
           bomb, 
           connectionId, 
           roomId, 
@@ -438,7 +436,7 @@ exports.handler = async (event) => {
           domainName, 
           stage
         );
-
+        
         if(room_data.turnOrder.length != 0) {
           await broadcastToRoom(
             roomId,
@@ -569,9 +567,11 @@ async function CheckBombHitAssets(bomb, connectionId, roomId, room_data, usersIn
     // Get up to date user data
     usersInRoom = await getUsersInRoom(roomId);
     await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
-
+    
     if(asset_types_hit.has("cap")) {
       await checkWinCondition(room_data, usersInRoom, domainName, stage);
     }
   }
+
+  return usersInRoom;
 }

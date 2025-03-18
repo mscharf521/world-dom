@@ -69,7 +69,8 @@ const getRoomData = async (roomId) => {
       whitelistCountries: room.Item.country_whitelist,
       blacklistCountries: room.Item.country_blacklist,
       bombScale: room.Item.bomb_scale,
-      numberOfSpies: room.Item.num_spies
+      numberOfSpies: room.Item.num_spies,
+      numberOfBoats: room.Item.num_boats
     };
   }
   return room.Item;
@@ -207,6 +208,7 @@ const createUser = async (roomId, connectionId, username) => {
     username,
     caps: [],
     spies: [],
+    boats: [],
     ttl: Date.now() + TTL_12_HOURS
   };
 
