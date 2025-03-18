@@ -49,11 +49,11 @@ export default function RoomPage(props) {
     }
   }
 
-  const incrementMinPopulation = () => {
+  const incrementMinPopulation = (amount) => {
     if (!props.isLeader) return;
-    const newMinPopulation = (props.settings?.minPopulation || 0) + 100000;
+    const newMinPopulation = (props.settings?.minPopulation || 0) + amount;
     handleSettingChange('minPopulation', newMinPopulation);
-  }
+  };
 
   // Extract country options for Autocomplete
   const countryOptions = Object.keys(COUNTRIES);
@@ -83,29 +83,48 @@ export default function RoomPage(props) {
             minValue={0}
             maxValue={10}
           />
+          <AssetSetting
+            title="Boats"
+            value={props.settings?.numberOfBoats}
+            settingKey="numberOfBoats"
+            handleSettingChange={handleSettingChange}
+            isLeader={props.isLeader}
+            minValue={0}
+            maxValue={10}
+          />
         </div>
 
-        <div className="SettingField">
-          <NumericFormat
-            value={props.settings?.minPopulation}
-            thousandSeparator={true}
-            customInput={TextField}
-            label="Minimum Population"
-            type="text"
-            onValueChange={(values) => {
-              handleSettingChange('minPopulation', parseInt(values.value));
-            }}
-            disabled={!props.isLeader}
-            size="small"
-          />
+        <div className="SettingField" style={{ display: "flex", gap: "10px" }}>
+          <div style={{ flexGrow: "1" }}>
+            <NumericFormat
+              value={props.settings?.minPopulation}
+              thousandSeparator={true}
+              customInput={TextField}
+              label="Minimum Population"
+              type="text"
+              onValueChange={(values) => {
+                handleSettingChange("minPopulation", parseInt(values.value));
+              }}
+              disabled={!props.isLeader}
+              size="small"
+              fullWidth
+            />
+          </div>
           <Button
             variant="contained"
             color="primary"
-            onClick={incrementMinPopulation}
+            onClick={() => incrementMinPopulation(100000)}
             disabled={!props.isLeader}
-            style={{ marginLeft: '10px' }}
           >
             +100,000
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => incrementMinPopulation(1000000)}
+            disabled={!props.isLeader}
+          >
+            +1,000,000
           </Button>
         </div>
         

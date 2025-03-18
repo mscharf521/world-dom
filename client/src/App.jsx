@@ -134,7 +134,8 @@ export default function App() {
     blacklistCountries: [],
     bombScale: 100,
     numberOfCapitals: 3,
-    numberOfSpies: 0
+    numberOfSpies: 0,
+    numberOfBoats: 0,
   });
 
   function SetStartState()

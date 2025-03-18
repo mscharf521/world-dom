@@ -28,6 +28,7 @@ const createRoom = async (roomId, password) => {
     country_blacklist: [],
     bomb_scale: 100,
     num_spies: 0,
+    num_boats: 0,
     ttl: Date.now() + TTL_12_HOURS
   };
 
@@ -39,6 +40,8 @@ const createRoom = async (roomId, password) => {
   room.id = room.PK.split('#')[1];
   room.settings = {
     numberOfCapitals: room.num_caps,
+    numberOfSpies: room.num_spies,
+    numberOfBoats: room.num_boats,
     minPopulation: room.min_pop,
     onlyCapitals: room.only_caps,
     whitelistCountries: room.country_whitelist,
@@ -104,21 +107,35 @@ const setRoomTurnOrder = async (roomId, turnOrder) => {
     }
   }));
 };  
-
 const setRoomSettings = async (roomId, settings) => {
+  const updateExpression = `
+    set 
+      num_caps = :num_caps, 
+      min_pop = :min_pop, 
+      only_caps = :only_caps, 
+      country_whitelist = :country_whitelist, 
+      country_blacklist = :country_blacklist, 
+      bomb_scale = :bomb_scale, 
+      num_spies = :num_spies, 
+      num_boats = :num_boats
+  `;
+
+  const expressionAttributeValues = {
+    ':num_caps': settings.numberOfCapitals,
+    ':min_pop': settings.minPopulation,
+    ':only_caps': settings.onlyCapitals,
+    ':country_whitelist': settings.whitelistCountries,
+    ':country_blacklist': settings.blacklistCountries,
+    ':bomb_scale': settings.bombScale,
+    ':num_spies': settings.numberOfSpies,
+    ':num_boats': settings.numberOfBoats
+  };
+
   await docClient.send(new UpdateCommand({
     TableName: process.env.GAME_TABLE,
     Key: { PK: `ROOM#${roomId}`, SK: 'METADATA' },
-    UpdateExpression: 'set num_caps = :num_caps, min_pop = :min_pop, only_caps = :only_caps, country_whitelist = :country_whitelist, country_blacklist = :country_blacklist, bomb_scale = :bomb_scale, num_spies = :num_spies',
-    ExpressionAttributeValues: {
-      ':num_caps': settings.numberOfCapitals,
-      ':min_pop': settings.minPopulation,
-      ':only_caps': settings.onlyCapitals,
-      ':country_whitelist': settings.whitelistCountries,
-      ':country_blacklist': settings.blacklistCountries,
-      ':bomb_scale': settings.bombScale,
-      ':num_spies': settings.numberOfSpies
-    }
+    UpdateExpression: updateExpression,
+    ExpressionAttributeValues: expressionAttributeValues
   }));
 };
 
@@ -341,4 +358,4 @@ module.exports = {
   removeRoom,
   setRoomSettings,
   setSpyInfo
-}; 
+};
