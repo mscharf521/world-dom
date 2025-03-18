@@ -18,19 +18,28 @@ export default function RoomSettingsPopup(props) {
 
   const getCountryName = (code) => COUNTRIES[code]?.name || code;
 
+  const formatSettingValue = (key, value) => {
+    if (( key == 'whitelistCountries' ||
+          key == 'blacklistCountries' ) &&
+        Array.isArray(value)) {
+      return value.length === 0 ? 'None' : value.map(getCountryName).join(', ');
+    }
+    if (key === 'bombScale') {
+      return `${value}%`;
+    }
+    if (key === 'onlyCapitals') {
+      return value ? 'Yes' : 'No';
+    }
+    return value.toString();
+  };
+
   return (
     <div className={"RoomSettingsPopup MultiUsePopup " + (props.hide ? "MultiUsePopupHide" : "MultiUsePopupShow")}>
       <div className="RoomSettingsSettingsList">
         {Object.entries(settings).map(([key, value]) => (
           <div key={key} className="SettingsItem">
             <span>{settingsLabels[key] || key}: </span>
-            <span>
-              {Array.isArray(value) 
-                ? (value.length === 0 
-                  ? 'None' 
-                  : value.map(getCountryName).join(', ')) 
-                : value.toString()}
-            </span>
+            <span>{formatSettingValue(key, value)}</span>
           </div>
         ))}
       </div>
