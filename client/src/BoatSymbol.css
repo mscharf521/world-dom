@@ -1,4 +1,4 @@
-.spy_sym {
+.boat_sym {
     width: 2em;
     height: 2em;
     margin: 0px 0px;
@@ -7,7 +7,7 @@
     vertical-align: middle;
 }
 
-.spy_svg {
+.boat_svg {
     height: 80%;
     display: block;
     margin: auto;
@@ -15,7 +15,7 @@
 
 @media only screen and (max-width: 812px) {
     
-    .spy_sym {
+    .boat_sym {
         width: 1.6em;
         height: 1.6em;
     }

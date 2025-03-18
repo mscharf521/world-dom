@@ -23,6 +23,7 @@ import './font.css'
 
 import { cap_path } from "./CapSymbol"
 import { spy_path } from "./SpySymbol";
+import { boat_path } from "./BoatSymbol";
 import { GetColorBackgroundClass, GetCSSColor, COLOR_CNT } from "./PlayerColors"
 import { COUNTRIES } from './constants/countries';
 import MultiUseInfo from "./MultiUseInfo";
@@ -824,6 +825,23 @@ export default function App() {
             strokeWeight: 0,
             scale: ((mapZoom ** 1.3) / 20),
             anchor: new window.google.maps.Point(50 / 2, 50 / 2),
+            }}
+          options={{clickable:false}}
+          key={index}
+        />);
+  };
+
+  const boatMarker = (boat, color, index) => {
+    return (
+      <Marker
+          position={{ lat: boat.boatinfo.lat, lng: boat.boatinfo.lng }}
+          icon={{
+            path: boat_path,
+            fillColor: color,
+            fillOpacity: 0.85,
+            strokeWeight: 0,
+            scale: ((mapZoom ** 1.3) / 20),
+            anchor: new window.google.maps.Point(115, 60),
             }}
           options={{clickable:false}}
           key={index}
