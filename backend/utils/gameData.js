@@ -277,6 +277,9 @@ const addScannedByUserCap = async (roomId, connectionId, index, scannerId) => {
 const addScannedByUserSpies = async (roomId, connectionId, index, scannerId) => {
   await addScannedByInList(roomId, connectionId, "spies", index, scannerId);
 };
+const addScannedByUserBoats = async (roomId, connectionId, index, scannerId) => {
+  await addScannedByInList(roomId, connectionId, "boats", index, scannerId);
+};
 const addScannedByInList = async (roomId, connectionId, list_name, index, scannerId) => {
   const list_str = list_name + '[' + index + ']';
   await docClient.send(new UpdateCommand({
@@ -294,6 +297,9 @@ const destroyUserCap = async (roomId, connectionId, index) => {
 };
 const destroyUserSpies = async (roomId, connectionId, index) => {
   await destroyInList(roomId, connectionId, "spies", index);
+}
+const destroyUserBoats = async (roomId, connectionId, index) => {
+  await destroyInList(roomId, connectionId, "boats", index);
 }
 const destroyInList = async (roomId, connectionId, list_name, index) => {
   const list_str = list_name + '[' + index + ']';
@@ -332,6 +338,31 @@ const setSpyInfo = async (roomId, connectionId, index, info) => {
   }));
 }; 
 
+const setUserBoats = async (roomId, connectionId, boats) => {
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: {
+      PK: `ROOM#${roomId}`,
+      SK: `USER#${connectionId}`
+    },
+    UpdateExpression: 'set boats = :boats',
+    ExpressionAttributeValues: {
+      ':boats': boats
+    }
+  }));
+};
+
+const setBoatInfo = async (roomId, connectionId, index, info) => {
+  await docClient.send(new UpdateCommand({
+    TableName: process.env.GAME_TABLE,
+    Key: { PK: `ROOM#${roomId}`, SK: `USER#${connectionId}` },
+    UpdateExpression: `set boats[${index}].boatinfo = :info`,
+    ExpressionAttributeValues: {
+      ':info': info
+    }
+  }));
+}; 
+
 const removeUserFromRoom = async (roomId, connectionId) => {
   await docClient.send(new DeleteCommand({
     TableName: process.env.GAME_TABLE,
@@ -359,5 +390,9 @@ module.exports = {
   removeUserFromRoom,
   removeRoom,
   setRoomSettings,
-  setSpyInfo
+  setSpyInfo,
+  setBoatInfo,
+  setUserBoats,
+  destroyUserBoats,
+  addScannedByUserBoats
 };

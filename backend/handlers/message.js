@@ -16,6 +16,10 @@ const {
   setSpyInfo,
   addScannedByUserSpies,
   addScannedByUserCap,
+  setUserBoats,
+  setBoatInfo,
+  destroyUserBoats,
+  addScannedByUserBoats
 } = require('../utils/gameData');
 const { checkWinCondition } = require('../utils/wincon');
 const { broadcastToRoom, sendToConnection } = require('../utils/send');
@@ -167,7 +171,7 @@ exports.handler = async (event) => {
         
         // Only check if we need to start the game if we do not have spies
         const room_data = await getRoomData(roomId);
-        if(room_data.settings.numberOfSpies <= 0) {
+        if(room_data.settings.numberOfSpies <= 0 && room_data.settings.numberOfBoats <= 0) {
           let done = usersInRoom.reduce((acc, user) => acc && user.caps.length > 0, true);
           if(done) await startGame(roomId, usersInRoom, connectionId, domainName, stage);
         }
@@ -305,7 +309,7 @@ exports.handler = async (event) => {
       }
 
       case 'client-boat': {
-        const { room: roomId, boatIdx, action, newBoatInfo } = data;
+        const { room: roomId, boatIdx, action, newBoatInfo, bomb } = data;
         let usersInRoom = await getUsersInRoom(roomId);
 
         const move_max_radius = CONSTANTS.boat_move_max_radius;
@@ -329,11 +333,7 @@ exports.handler = async (event) => {
               return { statusCode: 400, body: 'Invalid move' };
             }
 
-            await setBoatInfo(roomId, connectionId, boatIdx, newBoatInfo);
-            break;
-          }
-          case "sonar": {
-            const dstToClosestNondestroyedAsset = Number.MAX_VALUE;
+            let dstToClosestNondestroyedAsset = Number.MAX_VALUE;
             for(var user of usersInRoom) {
               if(user.connectionId === connectionId) continue;
   
@@ -366,15 +366,17 @@ exports.handler = async (event) => {
               for(let asset of assets) {
                 dstToClosestNondestroyedAsset = Math.min(
                   dstToClosestNondestroyedAsset,
-                  getDistanceFromLatLng(asset.lat, asset.lng, act_boat.boatinfo.lat, act_boat.boatinfo.lng)
+                  getDistanceFromLatLng(asset.lat, asset.lng, newBoatInfo.lat, newBoatInfo.lng)
                 );
-                await sendToConnection(
-                  connectionId,
-                  { type: 'boat-sonar', data: { dst: Math.round(dstToClosestNondestroyedAsset) } }, 
-                  domainName, stage
-                )
               }
+              await sendToConnection(
+                connectionId,
+                { type: 'boat-sonar', data: { dst: Math.round(dstToClosestNondestroyedAsset) } }, 
+                domainName, stage
+              )
             }
+
+            await setBoatInfo(roomId, connectionId, boatIdx, newBoatInfo);
             break;
           }
           case "bomb": {
@@ -405,6 +407,20 @@ exports.handler = async (event) => {
             break;
           }
         }
+
+        usersInRoom = await getUsersInRoom(roomId);
+        await SendUpToDateUserData(roomId, connectionId, domainName, stage, usersInRoom);
+
+        await sendToConnection(
+          connectionId,
+          { 
+            type: 'boat-action-result', 
+            data: { 
+              users: PrepUsers(usersInRoom)
+            } 
+          }, 
+          domainName, stage
+        )
 
         return { statusCode: 200, body: 'Boat action complete' };
       }
@@ -529,6 +545,17 @@ async function CheckBombHitAssets(bomb, connectionId, roomId, room_data, usersIn
         lng: spy.spyinfo.lng,
         destory: destroyUserSpies,
         alert_message: `A Spy was destroyed!`
+      })
+    })
+    user.boats.map((boat, boat_index) => {
+      assets.push({
+        type: "boat",
+        destroyed: boat.destroyed,
+        index: boat_index,
+        lat: boat.boatinfo.lat,
+        lng: boat.boatinfo.lng,
+        destory: destroyUserBoats,
+        alert_message: `A Boat was destroyed!`
       })
     })
 

@@ -25,7 +25,8 @@ function PrepUsers(usersInRoom) {
     username: user.username,
     connectionId: user.connectionId,
     caps: user.caps,
-    spies: user.spies
+    spies: user.spies,
+    boats: user.boats
   }))
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { Button, FormControlLabel, Switch } from '@mui/material'
+import { Button, FormControlLabel, Switch, ToggleButtonGroup, ToggleButton } from '@mui/material'
 import { LocationSearching } from '@mui/icons-material'
 import {
   GoogleMap,
@@ -50,11 +50,20 @@ const SPY = 0;
 const BOAT = 1;
 const BOMB = 2;
 
+const BOAT_MOVE = 0;
+const BOAT_BOMB = 1;
+
+const BOAT_BTN_SX = {
+  '&.Mui-selected': { backgroundColor: '#1976d2', color: 'white', boxShadow: "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)" },
+  '&.Mui-selected:hover': { backgroundColor: '#1565c0', color: 'white' },
+};
+
 let game_state = PREGAME;
 let turn_state = BOMB;
 let cap_count = 0;
 let cap_buffer = [];
 let spy_buffer = [];
+let boat_buffer = [];
 let is_my_turn = false;
 let player_colors = [];
 
@@ -101,11 +110,22 @@ export default function App() {
   const [selBtnDisabled, SetSelBtnDisabled] = useState(false);
   const [showSelCityInfo, SetShowSelCityInfo] = useState(false);
   const [showSelCityMarker, SetShowSelCityMarker] = useState(false);
-  const [showSelSpyMarker, SetShowSelSpyMarker] = useState(false);
   const [showLaunchBtn, SetShowLaunchBtn] = useState(false);
   const [showBombBtns, SetShowBombBtns] = useState(false);
   const [InfoText, SetInfoText] = useState({show: false, text:""})
+  
+  const [showSelSpyMarker, SetShowSelSpyMarker] = useState(false);
+  const [selectedSpy, SetSelectedSpy] = useState({});
   const [showSpyBtns, SetShowSpyBtns] = useState(false);
+  const [activeSpyIdx, SetActiveSpyIdx] = useState(-1);
+  const [activeSpyInfo, SetActiveSpyInfo] = useState(null);
+
+  const [showSelBoatMarker, SetShowSelBoatMarker] = useState(false);
+  const [selectedBoat, SetSelectedBoat] = useState({});
+  const [showBoatBtns, SetShowBoatBtns] = useState(false);
+  const [activeBoatIdx, SetActiveBoatIdx] = useState(-1);
+  const [activeBoatInfo, SetActiveBoatInfo] = useState(null);
+  const [boatMode, SetBoatMode] = useState(BOAT_MOVE);
 
   const [mapZoom, SetMapZoom] = useState(start_zoom);
 
@@ -118,12 +138,8 @@ export default function App() {
   const [curTurnID, SetCurTurnID] = useState("");
   const [bombCount, SetBombCount] = useState([999999,40,15,3]);
 
-  const [activeSpyIdx, SetActiveSpyIdx] = useState(-1);
-  const [activeSpyInfo, SetActiveSpyInfo] = useState(null);
-
   const [preBomb, SetPreBomb] = useState(null);
   const [selectedCity, SetSelectedCity] = useState({});
-  const [selectedSpy, SetSelectedSpy] = useState({});
 
   const [CityInfoControl, SetCityInfoControl] = useState(true);
 
@@ -190,6 +206,11 @@ export default function App() {
   const activeSpyIdxRef = useRef(activeSpyIdx);
   useEffect(() => {activeSpyIdxRef.current = activeSpyIdx})
 
+  const activeBoatIdxRef = useRef(activeBoatIdx);
+  useEffect(() => {activeBoatIdxRef.current = activeBoatIdx})
+  const boatModeRef = useRef(boatMode);
+  useEffect(() => {boatModeRef.current = boatMode}, [boatMode])
+
   const ctrlRef = useRef(CityInfoControl);
   useEffect(() => {ctrlRef.current = CityInfoControl})
 
@@ -203,6 +224,10 @@ export default function App() {
   const spy_search_radius = CONSTANTS.spy_search_radius;
   const spy_move_scan_max_radius = CONSTANTS.spy_move_scan_max_radius;
   const spy_move_max_radius = CONSTANTS.spy_move_max_radius;
+
+  const boat_move_max_radius = CONSTANTS.boat_move_max_radius;
+  const boat_bomb_range_max_radius = CONSTANTS.boat_bomb_range_max_radius;
+  const boat_bomb_radius = CONSTANTS.boat_bomb_radius;
   
   const bomb_datas = [
     {rad: 150000 * settings.bombScale / 100,  text:"1 megaton",  base_cnt: 999, bonus_per: 1,        zoom: 8 }, //base count and bonus are not used for first bomb type
@@ -337,13 +362,16 @@ export default function App() {
 
         case 'boat-sonar':
           const unit = "km"; //preferencesRef.current.units == "metric" ? "km" : "miles"
-          addAlert(`Your boat found an enemy asset ${payload.data.dst} ${unit} from its position`, null, 10000)
+          addAlert(`${payload.data.dst} ${unit} away from the closest enemy asset`, null, 15000)
           break;
 
-      
+        case 'boat-action-result':
+          handleTurnState(payload.data.users);
+          break;
+
         default:
-            console.log("Unknown message type:", payload);
-            break;
+          console.log("Unknown message type:", payload);
+          break;
       }
     };
   }, []);
@@ -449,6 +477,19 @@ export default function App() {
       SetShowSelBtn(true);
       SetSelBtnText("Select Spy Location");
       SetSelBtnDisabled(false);
+    } else if(game_state === BOATSEL) {
+      IsLatLngOnWater(e.latLng.lat(), e.latLng.lng()).then(isWater => {
+        if(isWater) {
+          SetSelectedBoat({lat:e.latLng.lat(), lng:e.latLng.lng()})
+          SetShowSelBoatMarker(true);
+    
+          SetShowSelBtn(true);
+          SetSelBtnText("Select Boat Location");
+          SetSelBtnDisabled(false);
+        } else {
+          addAlert("The boat must be in water", null, 2000);
+        }
+      });
     }
     
   }, []);
@@ -460,6 +501,8 @@ export default function App() {
   const secondaryMapClick = (e) => {
     if(turn_state === SPY){
       onSpyPosSelect(e);
+    } else if(turn_state === BOAT) {
+      onBoatPosSelect(e);
     } else if(turn_state === BOMB) {
       onBombPosSelect(e);
     }
@@ -479,6 +522,25 @@ export default function App() {
     {
       SetSelectedSpy({lat:e.latLng.lat(), lng:e.latLng.lng()})
       SetShowSelSpyMarker(true);
+    }
+  }
+
+  const onBoatPosSelect = (e) => {
+    if(game_state === GAME && is_my_turn)
+    {
+      if(boatModeRef.current == BOAT_BOMB) {
+        SetPreBomb((current) => {
+          return {center:{lat:e.latLng.lat(), lng:e.latLng.lng()}, radius:current.radius}})
+      } else {
+        IsLatLngOnWater(e.latLng.lat(), e.latLng.lng()).then((isWater) => {
+          if(isWater) {
+            SetSelectedBoat({lat:e.latLng.lat(), lng:e.latLng.lng()})
+            SetShowSelBoatMarker(true);
+          } else {
+            addAlert("The boat must be in water", null, 2000);
+          }
+        })
+      }
     }
   }
 
@@ -549,6 +611,8 @@ export default function App() {
       onSelCap(e);
     } else if (game_state === SPYSEL) {
       onSelSpy(e);
+    } else if (game_state === BOATSEL) {
+      onSelBoats(e);
     }
   };
 
@@ -577,13 +641,13 @@ export default function App() {
       SetBombCount(new_bombCount);
       cap_buffer = [];
 
-      if(settingsRef.current.numberOfSpies > 0)
-      {
+      if(settingsRef.current.numberOfSpies > 0) {
         game_state = SPYSEL;
         SetInfoText({show: true, text:`Place ${settingsRef.current.numberOfSpies} More Sp${settingsRef.current.numberOfSpies > 1 ? 'ies' : 'y'}`})
-      }
-      else
-      {
+      } else if(settingsRef.current.numberOfBoats > 0) {
+        game_state = BOATSEL;
+        SetInfoText({show: true, text:`Place ${settingsRef.current.numberOfBoats} More Boat${settingsRef.current.numberOfBoats > 1 ? 's' : ''}`})
+      } else {
         game_state = WAIT;
         SetInfoText({show: true, text:"Waiting for other players"})
       }
@@ -671,13 +735,6 @@ export default function App() {
     }
   };
 
-  const onPanToSpyBtnPress = () => {
-    if(activeSpyInfo) {
-      mapRef.current.panTo({lat: activeSpyInfo.lat, lng: activeSpyInfo.lng});
-      mapRef.current.setZoom(5);
-    }
-  }
-
   const onMoveSpyBtnPress = () => {
     if(activeSpyInfo && selectedSpy) {
       if(spyCanMove(activeSpyInfo, selectedSpy)) {
@@ -691,6 +748,44 @@ export default function App() {
       }
     }
   }
+
+  const onSubmitBoatAction = () => {
+    let success = false;
+    if(boatModeRef.current == BOAT_BOMB && boatCanBomb(activeBoatInfo, preBomb)) {
+      sendWSMessage("client-boat", {
+          room, 
+          action: "bomb", 
+          boatIdx: activeBoatIdx, 
+          bomb: {center:preBomb.center, radius: preBomb.radius, ownerID: my_connection_id}
+        });
+    } else if (boatCanMove(activeBoatInfo, selectedBoat)) {
+      sendWSMessage("client-boat", {
+        room, 
+        action: "move", 
+        boatIdx: activeBoatIdx, 
+        newBoatInfo: selectedBoat
+      });
+    }
+    if(success) {
+      SetPreBomb(null);
+      SetSelectedBoat({});
+      SetShowSelBoatMarker(false)
+    }
+  }
+
+  const boatCanMove = (activeBoat, moveBoat) => {
+    if(!activeBoat) return false;
+    if(!moveBoat) return false;
+    const distance = getDistanceFromLatLng(activeBoat.lat, activeBoat.lng, moveBoat.lat, moveBoat.lng);
+    return distance <= boat_move_max_radius;
+  }
+
+  const boatCanBomb = (activeBoat, bomb) => {
+    if(!activeBoat) return false;
+    if(!bomb || !bomb.center) return false;
+    const distance = getDistanceFromLatLng(activeBoat.lat, activeBoat.lng, bomb.center.lat, bomb.center.lng);
+    return distance <= boat_bomb_range_max_radius;
+  };
 
   const handleTurnState = (_users) => {
     const my_user = _users.find(u => u.connectionId === my_connection_id);
@@ -709,25 +804,28 @@ export default function App() {
       return;
     } 
 
-    SetActiveSpyIdx(-1);
     SetActiveSpyInfo(null);
     SetShowSpyBtns(false);
 
-    // const next_active_boat_idx = my_user.boats.findIndex((boat, idx) => idx > activeBoatIdx && !boat.destroyed);
-    // if(next_active_boat_idx !== -1) {
-    //   turn_state = BOAT;
-    //   SetActiveBoatIdx(next_active_boat_idx);
-    //   SetActiveBoatInfo(my_user.boats[next_active_boat_idx].boatinfo);
-    //   SetShowBoatBtns(true);
-    //   return;
-    // } 
+    const next_active_boat_idx = my_user.boats.findIndex((boat, idx) => idx > activeBoatIdxRef.current && !boat.destroyed);
+    if(next_active_boat_idx !== -1) {
+      turn_state = BOAT;
+      SetActiveBoatIdx(next_active_boat_idx);
+      SetActiveBoatInfo(my_user.boats[next_active_boat_idx].boatinfo);
+      SetShowBoatBtns(true);
+      SetBoatMode(BOAT_MOVE);
+      SetPreBomb({center: null, radius:boat_bomb_radius * 1000})
+      return;
+    } 
 
-    // SetActiveBoatIdx(-1);
-    // SetActiveBoatInfo(null);
-    // SetShowBoatBtns(false);
+    SetActiveSpyIdx(-1);
+    SetActiveBoatIdx(-1);
+
+    SetActiveBoatInfo(null);
+    SetShowBoatBtns(false);
     
     turn_state = BOMB;
-    SetPreBomb((current) => ({center:null, radius:bomb_datas[0].rad}))
+    SetPreBomb({center:null, radius:bomb_datas[0].rad})
     SetShowBombBtns(true);
   };
 
@@ -765,10 +863,10 @@ export default function App() {
     sendWSMessage('settings-change', {room, settings:newSettings});
   }, 200);
 
-  const scrollToLoc = (lat, lng) => {
+  const scrollToLoc = (lat, lng, zoom = 8) => {
     if (mapRef.current) {
       mapRef.current.panTo({ lat, lng });
-      mapRef.current.setZoom(8);
+      mapRef.current.setZoom(zoom);
     }
   };
 
@@ -797,6 +895,14 @@ export default function App() {
     }
   }
 
+  const renderBoat = (boat, user, index, colorOvrd = undefined) => {
+    if(showAsset(boat.destroyed, user)) {
+      return boatMarker(boat, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
+    } else if (showScannedAsset(boat.destroyed, boat.scannedBy, user)) {
+      return boatMarker(boat, colorOvrd ?? "Black", index);
+    }
+  }
+
   const capMarker = (cap, color, index) => {
     return (
       <Marker
@@ -806,7 +912,7 @@ export default function App() {
             fillColor: color,
             fillOpacity: 0.8,
             strokeWeight: 0,
-            scale: ((mapZoom ** 1.3) / 20),
+            scale: ((mapZoom ** 1.3) / 10),
             anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
             }}
           options={{clickable:false}}
@@ -840,7 +946,7 @@ export default function App() {
             fillColor: color,
             fillOpacity: 0.85,
             strokeWeight: 0,
-            scale: ((mapZoom ** 1.3) / 20),
+            scale: ((mapZoom ** 1.3) / 40),
             anchor: new window.google.maps.Point(115, 60),
             }}
           options={{clickable:false}}
@@ -916,21 +1022,28 @@ export default function App() {
         />
       }
 
+      {/* Caps */}
       {users.map((user) => (
         user.caps.map((cap, index) => renderCap(cap, user, index))
       ))}
+      
+      {cap_buffer && 
+      cap_buffer.map((cap, index) => (
+        cap.capinfo && capMarker(cap, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+      ))}
 
+      {/* Spies */}
       {users.map((user) => (
         user.spies.map((spy, index) => {
           if(activeSpyIdx === index && showSelSpyMarker) return renderSpy(spy, user, index, "DimGrey");
           return renderSpy(spy, user, index);
         }
       )))}
-
-      {cap_buffer && 
-      cap_buffer.map((cap, index) => (
-        cap.capinfo && capMarker(cap, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
-      ))}
+      
+      {spy_buffer &&
+      spy_buffer.map((spy, index) => (
+        spy.spyinfo && spyMarker(spy, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+      ))};
 
       {showSelSpyMarker && selectedSpy && selectedSpy.lat && selectedSpy.lng &&
         spyMarker({spyinfo:selectedSpy}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1)
@@ -978,10 +1091,38 @@ export default function App() {
         />
       }
 
-      {spy_buffer &&
-      spy_buffer.map((spy, index) => (
-        spy.spyinfo && spyMarker(spy, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+      {/* Boats */}
+      {users.map((user) => (
+        user.boats.map((boat, index) => {
+          if(activeBoatIdx === index && showSelBoatMarker) return renderBoat(boat, user, index, "DimGrey");
+          return renderBoat(boat, user, index);
+        }
+      )))}
+      
+      {boat_buffer &&
+      boat_buffer.map((boat, index) => (
+        boat.boatinfo && boatMarker(boat, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
       ))};
+
+      {showSelBoatMarker && selectedBoat && selectedBoat.lat && selectedBoat.lng &&
+        boatMarker({boatinfo:selectedBoat}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1)
+      }
+      { // Show active boat move max radius or max bomb range
+      activeBoatIdx !== -1 && activeBoatInfo && activeBoatInfo.lat && activeBoatInfo.lng &&
+        <Circle
+          center={{lat: activeBoatInfo.lat, lng: activeBoatInfo.lng}}
+          radius={((boatMode == BOAT_BOMB) 
+            ? boat_bomb_range_max_radius + boat_bomb_radius
+            : boat_move_max_radius) * 1000}
+          options={{
+            clickable:false, 
+            fillColor:"Gainsboro", 
+            fillOpacity: 0.1,
+            strokeColor: "Black",
+            strokeOpacity: 0.5,
+          }}
+        />
+      }
 
       {is_my_turn && preBomb && preBomb.center && preBomb.center.lat && preBomb.center.lng &&
       <Circle
@@ -1029,10 +1170,10 @@ export default function App() {
         <Button
           variant="contained"
           color="primary"
-          onClick={onPanToSpyBtnPress}
-        >
-          Pan To Spy
-        </Button>
+          onClick={() => {
+            if(activeSpyInfo) scrollToLoc(activeSpyInfo.lat, activeSpyInfo.lng, 4);
+          }}
+        > Pan To Spy </Button>
         <Button
           variant="contained"
           color="error"
@@ -1043,10 +1184,66 @@ export default function App() {
         </Button>
     </div>}
 
+    
+    {showBoatBtns &&
+    
+    <div className="boat-btn-container">
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            if(activeBoatInfo) scrollToLoc(activeBoatInfo.lat, activeBoatInfo.lng, 4);
+          }}
+        >
+          Pan To Boat
+        </Button>
+        <ToggleButtonGroup
+          color="primary"
+          value={boatMode}
+          exclusive
+          fullWidth
+        >
+          <ToggleButton 
+            value={BOAT_MOVE}
+            onChange={() => { 
+              if(boatMode == BOAT_BOMB) {
+                SetBoatMode(BOAT_MOVE)
+                SetPreBomb({center:null, radius:boat_bomb_radius * 1000})
+              } 
+            }}
+            sx={BOAT_BTN_SX}
+          >Move</ToggleButton>
+          <ToggleButton 
+            value={BOAT_BOMB}
+            onChange={() => { 
+              if(boatMode == BOAT_MOVE) {
+                SetBoatMode(BOAT_BOMB)
+                SetSelectedBoat({});
+                SetShowSelBoatMarker(false)
+              } 
+            }}
+            sx={BOAT_BTN_SX}
+          >Bomb</ToggleButton>
+        </ToggleButtonGroup>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={onSubmitBoatAction}
+          disabled={
+            boatMode == BOAT_MOVE
+              ? !boatCanMove(activeBoatInfo, selectedBoat)
+              : !boatCanBomb(activeBoatInfo, preBomb)
+          }
+          endIcon={boatMode == BOAT_BOMB ? <LocationSearching /> : null}
+        >
+          {boatMode == BOAT_MOVE ? "Move" : "Launch"}
+        </Button>
+    </div>}
+
     {showBombBtns &&
     <div className="bomb-btn-container">
 
-    {showLaunchBtn &&                              // Launch button
+    {showLaunchBtn &&
     <div className='bomb-btn-div'>
     <Button
       className="launch-btn"
@@ -1059,7 +1256,7 @@ export default function App() {
         <div className="game-btn-label">Launch</div>
     </Button></div>}
 
-    {bomb_datas.map((bomb_data, index) => (    // Bomb buttons
+    {bomb_datas.map((bomb_data, index) => (
       <div key={index} className={'bomb-btn-div' + ((preBomb && preBomb.radius && GetIndexFromRadius(preBomb.radius, bomb_datas) === index) ? " active-bomb-btn" : "")}>
         <Button
           className={"bomb-btn" + ((bombCount[index] > 0) ? " has-bomb" : " no-bombs")}
@@ -1096,7 +1293,7 @@ export default function App() {
     <div className="mouse-container">
       {showBombBtns &&
        <div className="mouse-div">
-        {turn_state == SPY ? "Spy Selection" : "Bomb Selection"}
+        {GetTurnUIText(turn_state)}
         <RightMouse css_color="white"/>
       </div>}
       <div className="mouse-div">
@@ -1111,15 +1308,26 @@ export default function App() {
         control={<Switch checked={!CityInfoControl} onChange={OnControlChange} />}
         label={(CityInfoControl 
           ? "City Info" 
-          : (turn_state == BOMB
-            ? "Bomb Select"
-            : "Spy Select"
-          ))}
+          : GetTurnUIText(turn_state))}
         labelPlacement="top"
       />
     </div>}
 
   </div>
+}
+
+function GetTurnUIText(turn_state) {
+  switch(turn_state) {
+    case BOMB:
+      return "Bomb Select"
+    case SPY:
+      return "Spy Select"
+    case BOAT:
+      return "Boat Select"
+    default:
+      console.error("Unknown turn state: ", turn_state);
+      return ""
+  }
 }
 
 async function GetCityInfoFromLatLng(lat, lng, rad) {
@@ -1141,6 +1349,22 @@ async function GetCityInfoFromLatLng(lat, lng, rad) {
     }
     
     return cityinfo;
+}
+
+async function IsLatLngOnWater(lat, lng) {
+  const FEATURES = {
+    LAND: 0, 
+    OCEAN: 1, 
+    LAKE: 2,
+    RIVER: 3,
+    UNKNOWN: 4
+  };
+
+  let response = await fetch(`https://is-on-water.balbona.me/api/v1/get/${lat.toFixed(2)}/${lng.toFixed(2)}`);
+  let data = await response.json();
+  let feature = data.feature;
+
+  return data.isWater;
 }
 
 // returns search radius in meters from map zoom
