@@ -10,7 +10,8 @@ const {
 
 const docClient = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
-const TTL_12_HOURS = 1000 * 60 * 60 * 12;
+const TTL_12_HOURS_MS = 1000 * 60 * 60 * 12;
+const GetTTL = () => (Date.now() + TTL_12_HOURS_MS) / 1000;
 
 // ROOM DATA
 const createRoom = async (roomId, password) => {
@@ -29,7 +30,7 @@ const createRoom = async (roomId, password) => {
     bomb_scale: 100,
     num_spies: 0,
     num_boats: 0,
-    ttl: Date.now() + TTL_12_HOURS
+    ttl: GetTTL()
   };
 
   await docClient.send(new PutCommand({
@@ -209,7 +210,7 @@ const createUser = async (roomId, connectionId, username) => {
     caps: [],
     spies: [],
     boats: [],
-    ttl: Date.now() + TTL_12_HOURS
+    ttl: GetTTL()
   };
 
   await docClient.send(new PutCommand({
