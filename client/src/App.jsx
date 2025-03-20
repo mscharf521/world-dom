@@ -296,7 +296,7 @@ export default function App() {
             SetIsLeader(payload.data.leader);
             SetSettings((current) => ({...current, ...payload.data.settings}));
           } else {
-            console.log("failed to join room");
+            addAlert("Failed to Join or Create Room", null, 3000);
           }
           break;
 

@@ -80,7 +80,7 @@ exports.handler = async (event) => {
         let room_data = await getRoomData(roomId);
         // room does not exist and it has not started playing
         if( room_data != null
-         && !room_data.hasStarted )
+         && !room_data.gameStarted )
         {
             success = true;
         }
