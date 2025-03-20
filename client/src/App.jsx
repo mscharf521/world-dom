@@ -58,6 +58,8 @@ const BOAT_BTN_SX = {
   '&.Mui-selected:hover': { backgroundColor: '#1565c0', color: 'white' },
 };
 
+const PREFS_STORAGE_KEY = 'worldDomPrefs';
+
 let game_state = PREGAME;
 let turn_state = BOMB;
 let cap_count = 0;
@@ -157,6 +159,21 @@ export default function App() {
     numberOfBoats: 0,
   });
 
+  const [prefs, SetPrefs] = useState(() => {
+    const savedPrefs = localStorage.getItem(PREFS_STORAGE_KEY);
+    if (savedPrefs) {
+      try {
+        return JSON.parse(savedPrefs);
+      } catch (e) {
+        console.error('Failed to parse saved preferences:', e);
+      }
+    }
+    return {
+      metricUnits: true,
+      dragBomb: true
+    };
+  });
+
   function SetStartState()
   {
     game_state = PREGAME; 
@@ -196,6 +213,9 @@ export default function App() {
     mapRef.current.panTo(start_center)
     mapRef.current.setZoom(start_zoom)
   }
+
+  const prefsRef = useRef(prefs);
+  useEffect(() => {prefsRef.current = prefs})
 
   const settingsRef = useRef(settings);
   useEffect(() => {settingsRef.current = settings})
@@ -361,7 +381,7 @@ export default function App() {
           break;
 
         case 'boat-sonar':
-          const unit = "km"; //preferencesRef.current.units == "metric" ? "km" : "miles"
+          const unit = prefsRef.current.metricUnits ? "km" : "miles";
           addAlert(`${payload.data.dst} ${unit} away from the closest enemy asset`, null, 15000)
           break;
 
@@ -863,6 +883,10 @@ export default function App() {
     sendWSMessage('settings-change', {room, settings:newSettings});
   }, 200);
 
+  const onPrefsChange = (newPrefs) => {
+    SetPrefs(newPrefs);
+  };
+
   const scrollToLoc = (lat, lng, zoom = 8) => {
     if (mapRef.current) {
       mapRef.current.panTo({ lat, lng });
@@ -954,6 +978,10 @@ export default function App() {
         />);
   };
 
+  useEffect(() => {
+    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+  }, [prefs]);
+
   return <div>
     {showStartPage &&
     <StartingPage name={name} SetName={SetName} room={room} SetRoom={SetRoom} OnSubmit={onJoinRoom}/>}
@@ -980,6 +1008,8 @@ export default function App() {
       SetMessage={SetMessage} 
       OnSend={onSendMsg}
       settings={settings}
+      prefs={prefs}
+      onPrefsChange={onPrefsChange}
     />}
 
     {InfoText.show &&
@@ -1140,7 +1170,7 @@ export default function App() {
         center={preBomb.center}
         radius={preBomb.radius}
         options={{
-          draggable: true,
+          draggable: prefs.dragBomb,
         }}
         onDragStart={(e) => { dragStart = {lat:e.latLng.lat(), lng:e.latLng.lng()} }}
         onDragEnd={(e) => {
@@ -1342,7 +1372,6 @@ function GetTurnUIText(turn_state) {
 }
 
 async function GetCityInfoFromLatLng(lat, lng, rad) {
-    // Make API call passing in LAT LNG
     let response = await fetch("https://public.opendatasoft.com/api/records/1.0/search/?dataset=geonames-all-cities-with-a-population-1000&q=&sort=population&geofilter.distance="+ lat + "%2C+" + lng + "%2C+" + rad)
     let data = await response.json()
     let cityinfo = null

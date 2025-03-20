@@ -101,7 +101,12 @@ export default function MultiUseInfo(props) {
       OnSend={props.OnSend} 
       setUnreadMessages={setUnreadMessages}
     />
-    <RoomSettingsPopup hide={hideRoomSettings} settings={props.settings} />
+    <RoomSettingsPopup 
+      hide={hideRoomSettings} 
+      settings={props.settings} 
+      prefs={props.prefs}
+      onPrefsChange={props.onPrefsChange}
+    />
     <Notes hide={hideNotes} />
   </div>
 }
