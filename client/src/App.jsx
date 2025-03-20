@@ -881,29 +881,29 @@ export default function App() {
 
   const renderCap = (cap, user, index) => {
     if(showAsset(cap.destroyed, user)) {
-      return capMarker(cap, GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
+      return capMarker(cap, GetCSSColor(GetPlayerColorIdx(user.connectionId)), index, user.connectionId);
     } else if (showScannedAsset(cap.destroyed, cap.scannedBy, user)) {
-      return capMarker(cap, "Black", index);
+      return capMarker(cap, "Black", index, user.connectionId);
     }
   };
 
   const renderSpy = (spy, user, index, colorOvrd = undefined) => {
     if(showAsset(spy.destroyed, user)) {
-      return spyMarker(spy, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
+      return spyMarker(spy, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index, user.connectionId);
     } else if (showScannedAsset(spy.destroyed, spy.scannedBy, user)) {
-      return spyMarker(spy, colorOvrd ?? "Black", index);
+      return spyMarker(spy, colorOvrd ?? "Black", index, user.connectionId);
     }
   }
 
   const renderBoat = (boat, user, index, colorOvrd = undefined) => {
     if(showAsset(boat.destroyed, user)) {
-      return boatMarker(boat, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index);
+      return boatMarker(boat, colorOvrd ?? GetCSSColor(GetPlayerColorIdx(user.connectionId)), index, user.connectionId);
     } else if (showScannedAsset(boat.destroyed, boat.scannedBy, user)) {
-      return boatMarker(boat, colorOvrd ?? "Black", index);
+      return boatMarker(boat, colorOvrd ?? "Black", index, user.connectionId);
     }
   }
 
-  const capMarker = (cap, color, index) => {
+  const capMarker = (cap, color, key, connectionId) => {
     return (
       <Marker
           position={{ lat: cap.capinfo.lat, lng: cap.capinfo.lng }}
@@ -916,11 +916,11 @@ export default function App() {
             anchor: new window.google.maps.Point(48.384 / 2, 48.384 / 2),
             }}
           options={{clickable:false}}
-          key={index}
+          key={AssetMarkerKey("cap", connectionId, key)}
         />);
   };
 
-  const spyMarker = (spy, color, index) => {
+  const spyMarker = (spy, color, key, connectionId) => {
     return (
       <Marker
           position={{ lat: spy.spyinfo.lat, lng: spy.spyinfo.lng }}
@@ -933,11 +933,11 @@ export default function App() {
             anchor: new window.google.maps.Point(50 / 2, 50 / 2),
             }}
           options={{clickable:false}}
-          key={index}
+          key={AssetMarkerKey("spy", connectionId, key)}
         />);
   };
 
-  const boatMarker = (boat, color, index) => {
+  const boatMarker = (boat, color, key, connectionId) => {
     return (
       <Marker
           position={{ lat: boat.boatinfo.lat, lng: boat.boatinfo.lng }}
@@ -950,7 +950,7 @@ export default function App() {
             anchor: new window.google.maps.Point(115, 60),
             }}
           options={{clickable:false}}
-          key={index}
+          key={AssetMarkerKey("boat", connectionId, key)}
         />);
   };
 
@@ -1004,7 +1004,7 @@ export default function App() {
     >
       {bombs.map((bomb, index) => (
         <Circle
-          key={index}
+          key={`bomb-${index}`}
           center={bomb.center}
           radius={bomb.radius}
           options={{
@@ -1017,6 +1017,7 @@ export default function App() {
 
       {showSelCityMarker && selectedCity && selectedCity.lat && selectedCity.lng &&
         <Marker
+          key={"selected-city-marker"}
           position={{ lat: selectedCity.lat, lng: selectedCity.lng }}
           options={{clickable:false}}
         />
@@ -1029,29 +1030,32 @@ export default function App() {
       
       {cap_buffer && 
       cap_buffer.map((cap, index) => (
-        cap.capinfo && capMarker(cap, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+        cap.capinfo && capMarker(cap, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index, my_connection_id)
       ))}
 
       {/* Spies */}
       {users.map((user) => (
         user.spies.map((spy, index) => {
-          if(activeSpyIdx === index && showSelSpyMarker) return renderSpy(spy, user, index, "DimGrey");
+          if(activeSpyIdx === index 
+            && user.connectionId == my_connection_id
+            && showSelSpyMarker) return renderSpy(spy, user, index, "DimGrey");
           return renderSpy(spy, user, index);
         }
       )))}
       
       {spy_buffer &&
       spy_buffer.map((spy, index) => (
-        spy.spyinfo && spyMarker(spy, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+        spy.spyinfo && spyMarker(spy, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index, my_connection_id)
       ))};
 
       {showSelSpyMarker && selectedSpy && selectedSpy.lat && selectedSpy.lng &&
-        spyMarker({spyinfo:selectedSpy}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1)
+        spyMarker({spyinfo:selectedSpy}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1, my_connection_id)
       }
 
       { // Show active spy move and scan max radius
       activeSpyIdx !== -1 && activeSpyInfo && activeSpyInfo.lat && activeSpyInfo.lng &&
         <Circle
+          key={"spy-move-scan-circle"}
           center={{lat: activeSpyInfo.lat, lng: activeSpyInfo.lng}}
           radius={spy_move_scan_max_radius * 1000}
           options={{
@@ -1066,6 +1070,7 @@ export default function App() {
       { // Show active spy move max radius
       activeSpyIdx !== -1 && activeSpyInfo && activeSpyInfo.lat && activeSpyInfo.lng &&
         <Circle
+        key={"spy-move-circle"}
           center={{lat: activeSpyInfo.lat, lng: activeSpyInfo.lng}}
           radius={spy_move_max_radius * 1000}
           options={{
@@ -1081,6 +1086,7 @@ export default function App() {
       { // Show selected spy scan radius at new position
       activeSpyIdx !== -1 && showSelSpyMarker && selectedSpy && spyCanMoveScan(activeSpyInfo, selectedSpy) &&
         <Circle
+          key={"spy-scan-circle"}
           center={{lat: selectedSpy.lat, lng: selectedSpy.lng}}
           radius={spy_search_radius * 1000}
           options={{
@@ -1094,22 +1100,26 @@ export default function App() {
       {/* Boats */}
       {users.map((user) => (
         user.boats.map((boat, index) => {
-          if(activeBoatIdx === index && showSelBoatMarker) return renderBoat(boat, user, index, "DimGrey");
+          if(activeBoatIdx === index 
+            && user.connectionId == my_connection_id
+            && showSelBoatMarker
+          ) return renderBoat(boat, user, index, "DimGrey");
           return renderBoat(boat, user, index);
         }
       )))}
       
       {boat_buffer &&
       boat_buffer.map((boat, index) => (
-        boat.boatinfo && boatMarker(boat, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index)
+        boat.boatinfo && boatMarker(boat, GetCSSColor(GetPlayerColorIdx(my_connection_id)), index, my_connection_id)
       ))};
 
       {showSelBoatMarker && selectedBoat && selectedBoat.lat && selectedBoat.lng &&
-        boatMarker({boatinfo:selectedBoat}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1)
+        boatMarker({boatinfo:selectedBoat}, GetCSSColor(GetPlayerColorIdx(my_connection_id)), -1, my_connection_id)
       }
       { // Show active boat move max radius or max bomb range
       activeBoatIdx !== -1 && activeBoatInfo && activeBoatInfo.lat && activeBoatInfo.lng &&
         <Circle
+          key={"boat-move-or-bomb-circle"}
           center={{lat: activeBoatInfo.lat, lng: activeBoatInfo.lng}}
           radius={((boatMode == BOAT_BOMB) 
             ? boat_bomb_range_max_radius + boat_bomb_radius
@@ -1126,6 +1136,7 @@ export default function App() {
 
       {is_my_turn && preBomb && preBomb.center && preBomb.center.lat && preBomb.center.lng &&
       <Circle
+        key={"pre-bomb-circle"}
         center={preBomb.center}
         radius={preBomb.radius}
         options={{
@@ -1419,4 +1430,8 @@ function GetBombIdxfromRadius(radius, bomb_datas)
     }
   }
   return 0;
+}
+
+function AssetMarkerKey(name, connectionId, key) {
+  return `${connectionId}-${name}-${key}`
 }
