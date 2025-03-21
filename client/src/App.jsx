@@ -1170,6 +1170,7 @@ export default function App() {
         center={preBomb.center}
         radius={preBomb.radius}
         options={{
+          clickable: prefs.dragBomb,
           draggable: prefs.dragBomb,
         }}
         onDragStart={(e) => { dragStart = {lat:e.latLng.lat(), lng:e.latLng.lng()} }}
